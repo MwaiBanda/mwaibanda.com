@@ -11,7 +11,7 @@
     <td>
         <h3 align="center"> Clean Architecture </h3>
       <div align="center">
-        <p>Clean Architecture in iOS & Android development.<br>Learn about clean architecture, loose coupling,<br>designing beautiful, maintainable & testable code.
+        <p>Clean Architecture in iOS & Android<br>development. Learn about clean <br>architecture,loose coupling,designing<br>beautiful, maintainable & testable code.
         </p>
       </div>
     </td>
@@ -32,7 +32,7 @@
     <td>
         <h3 align="center"> SOLID Principles In The Real World </h3>
       <div align="center">
-        <p> Learn SOLID principles by refactoring an open-source<br>radio & podcast streaming app's data layer to<br>reinforce SOLID principles in a real-world project
+        <p> Learn SOLID principles by refactoring an<br>open-source radio & podcast streaming<br>app's data layer to reinforce SOLID<br>principles in a real-world project
         </p>
       </div>
     </td>
