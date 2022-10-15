@@ -1,4 +1,4 @@
-## Clean Architecture
+# Clean Architecture
 
 Just like a building architect maps out and separates a building space into different levels, rooms & entrances/exits. So do we separate layers of our apps into different parts to have complete and elegant [loosely coupled](https://en.wikipedia.org/wiki/Loose_coupling) systems. Software Architect is all about [separation of concerns](https://en.wikipedia.org/wiki/Separation_of_concerns) to better structure a project, in-order to allow for easier data flow, testing and maintainability.
 
