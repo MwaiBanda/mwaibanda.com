@@ -1,4 +1,14 @@
-# SOLID Principles In The Real World
+---
+title: "SOLID Principles In The Real World"
+seoTitle: "SOLID Principles In The Real World"
+seoDescription: "Learn SOLID principles by refactoring an open source radio & podcast streaming app's data layer to reinforce SOLID principles in a real world project"
+datePublished: Mon Jun 13 2022 16:10:42 GMT+0000 (Coordinated Universal Time)
+cuid: cl4cfea5j04vgjpnv3v8z32io
+slug: solid-principles-in-the-real-world
+cover: https://cdn.hashnode.com/res/hashnode/image/upload/v1656363122654/opkHs7Rjk.png
+tags: software-engineering, solid-principles
+
+---
 
 SOLID principles are rules that help us create classes that can be easily extendable, modifiable, and flexible. The progenitor to these principles is non other than,  our friendly neighborhood [*Uncle Bob* 
  (Robert C. Martin)](https://en.wikipedia.org/wiki/Robert_C._Martin). Now let's define these principles;
