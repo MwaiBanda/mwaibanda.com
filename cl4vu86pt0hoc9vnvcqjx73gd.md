@@ -1,4 +1,14 @@
-# Clean Architecture
+---
+title: "Clean Architecture"
+seoTitle: "Clean Architecture in iOS & Android Development"
+seoDescription: "Clean Architecture in iOS & Android development. Learn about clean architecture, loose coupling, designing beautiful, maintainable & testable code."
+datePublished: Tue Jun 28 2022 01:55:36 GMT+0000 (Coordinated Universal Time)
+cuid: cl4vu86pt0hoc9vnvcqjx73gd
+slug: clean-architecture
+cover: https://cdn.hashnode.com/res/hashnode/image/upload/v1655934826967/13qIEfNif.png
+tags: ios, software-architecture, android, clean-code, clean-architecture
+
+---
 
 Just like a building architect maps out and separates a building space into different levels, rooms & entrances/exits. So do we separate layers of our apps into different parts to have complete and elegant [loosely coupled](https://en.wikipedia.org/wiki/Loose_coupling) systems. Software Architect is all about [separation of concerns](https://en.wikipedia.org/wiki/Separation_of_concerns) to better structure a project, in-order to allow for easier data flow, testing and maintainability.
 
