@@ -10,13 +10,11 @@ import (
 )
 
 func main() {
-	e := echo.New()
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalln("Error loading .env file")
 	}
-	
-
+	e := echo.New()
 	port := func() string {
 		if len(os.Getenv("PORT")) > 0 {
 			return os.Getenv("PORT")
@@ -24,6 +22,7 @@ func main() {
 			return "8080"
 		}
 	}()
+
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
