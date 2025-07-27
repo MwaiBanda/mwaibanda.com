@@ -1,19 +1,13 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalln("Error loading .env file")
-	}
 	e := echo.New()
 	port := os.Getenv("PORT")
 	if port == "" {
