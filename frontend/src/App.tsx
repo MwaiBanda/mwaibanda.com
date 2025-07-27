@@ -4,14 +4,14 @@ import Typewriter from "typewriter-effect"
 function App() {
 
   return (
-    <div className="flex min-h-screen w-[100vw] flex-col items-center  p-6 text-white lg:justify-center lg:p-8 bg-black">
+    <div className="flex min-h-screen min-w-screen flex-col items-center  p-6 text-white lg:justify-center lg:p-8 bg-black">
                 <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
                     <nav className="flex items-center justify-end gap-4">
                        
                     </nav>
                 </header>
                 <div className="flex w-full items-start justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
-                    <div className='max-w-[600px] min-w-[600px]'>
+                    <div className='max-w-[600px] lg:min-w-[600px]'>
                     <h1>Mwai Banda</h1>
                     <h2 className="mb-12 text-gray-500">Software Engineer</h2>
                     <Typewriter onInit={(t) => {
