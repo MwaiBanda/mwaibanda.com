@@ -94,8 +94,8 @@ function MainContent({ show, work }: MainContentProps) {
   if (show) {
     return <>
       <SectionHeader title='featured work' style='mt-12' />
-      {work?.map((item) => {
-        return <div className="pb-4 mb-4 border-b border-neutral-800 text-white">
+      {work?.map((item, i) => {
+        return <div key={`work-${i}`} className="pb-4 mb-4 border-b border-neutral-800 text-white">
           <div className="flex items-center justify-between cursor-pointer">
             <div className="flex items-start gap-4 flex-1">
               <div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border shadow-md bg-black border-neutral-900">
