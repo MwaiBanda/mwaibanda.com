@@ -1,6 +1,22 @@
-FROM golang:1.24-alpine
+FROM node:20-alpine AS frontend
 
-WORKDIR /dir
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Set working directory to frontend folder
+WORKDIR /app
+
+# Copy and install frontend dependencies
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm install
+
+# Copy frontend source and build
+COPY frontend ./
+RUN pnpm run build
+
+FROM golang:1.24-alpine AS backend
+
+WORKDIR /app
 
 # Pre-cache Go modules
 COPY go.mod .
@@ -9,6 +25,7 @@ RUN go mod download
 
 # Copy all source code
 COPY . .
+COPY --from=frontend /app/dist ./frontend/dist
 
 # Build the binary
 RUN go build -o ./out/dist .
