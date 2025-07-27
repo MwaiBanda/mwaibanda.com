@@ -15,16 +15,13 @@ func main() {
 		log.Fatalln("Error loading .env file")
 	}
 	e := echo.New()
-	port := func() string {
-		if len(os.Getenv("PORT")) > 0 {
-			return os.Getenv("PORT")
-		} else {
-			return "8080"
-		}
-	}()
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
-	e.Logger.Fatal(e.Start(":" + port))
+	e.Logger.Fatal(e.Start("0.0.0.0:" + port))
 }
