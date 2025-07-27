@@ -16,7 +16,7 @@ function App() {
                     <h2 className="mb-12 text-gray-500">Software Engineer</h2>
                     <Typewriter onInit={(t) => {
                         t.pauseFor(110)
-                        .changeDelay(120)
+                        .changeDelay(110)
                         .typeString("I design, develop & deploy end-to-end solutions for Android, iOS, iPadOS, Roku & Web(Frontend & Backend). ")
                         .deleteChars(1)
                         .typeString("<br><br>I'm enamored with design, its ability to shape reality, the journey from idea to concept, and then to product. All while being authentic & original, empathizing with the end-user to provide an experience that's uniquely tailored to meet that one user's need while fulfilling the business requirement.")
