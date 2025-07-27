@@ -11,7 +11,7 @@ function App() {
                     </nav>
                 </header>
                 <div className="flex w-full items-start justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
-                    <div className='max-w-[600px] md:min-w-[600px] '>
+                    <div className='max-w-[600px] md:min-w-[600px] min-w-[90vw]'>
                     <h1>Mwai Banda</h1>
                     <h2 className="mb-12 text-gray-500">Software Engineer</h2>
                     <Typewriter onInit={(t) => {
