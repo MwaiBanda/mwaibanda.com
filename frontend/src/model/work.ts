@@ -2,7 +2,8 @@ export type Work = {
         name: string,
     image: string,
 
-    year: number,
+    startDate: string,
+    endDate: string,
     summary: string,
     description: string,
     link: string,

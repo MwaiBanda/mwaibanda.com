@@ -5,6 +5,7 @@ import { useTheme } from './components/ui/theme-provider'
 import SectionHeader from './components/ui/section-header'
 import { useQuery } from '@tanstack/react-query'
 import type { Work } from './model/work'
+import type { Article } from './model/article'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -14,7 +15,11 @@ function App() {
       return (await (await fetch("/api/v1/work")).json()) as Work[]
     },
   })
-
+  const articles = useQuery({
+    queryKey: ['articles'], queryFn: async () => {
+      return (await (await fetch("/api/v1/articles")).json()) as Article[]
+    },
+  })
   useEffect(() => {
     setTheme("dark")
   }, [])
@@ -28,9 +33,9 @@ function App() {
         </nav>
       </header>
       <div className="flex w-full items-start justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
-        <div className='max-w-[600px] md:min-w-[600px] min-w-[90vw]'>
+        <div className='max-w-[600px] md:min-w-[600px] min-w-[90vw] pb-[80px]'>
           <h1>Mwai Banda</h1>
-          <h2 className="mb-12 text-gray-500">Software Engineer</h2>
+          <h2 className="mb-12 text-neutral-400">Software Engineer</h2>
           <Typewriter onInit={(t) => {
             t.pauseFor(100)
               .changeDelay(100)
@@ -44,7 +49,8 @@ function App() {
               })
               .start();
           }} />
-          <MainContent show={showContent} work={work.data ?? []} />
+          <MainContent show={showContent} work={work.data ?? []} articles={articles.data ?? []} />
+          {showContent && <span className='text-xs text-neutral-500'>© 2025 Copyright - Mwai Banda</span>}
         </div>
       </div>
       <div className="fixed bottom-5 left-1/2 transform -translate-x-1/2 z-50">
@@ -85,9 +91,10 @@ function App() {
 interface MainContentProps {
   show: boolean,
   work?: Work[]
+  articles?: Article[]
 }
 
-function MainContent({ show, work }: MainContentProps) {
+function MainContent({ show, work, articles }: MainContentProps) {
   useEffect(() => {
     console.log(work)
   }, [work])
@@ -95,27 +102,58 @@ function MainContent({ show, work }: MainContentProps) {
     return <>
       <SectionHeader title='featured work' style='mt-12' />
       {work?.map((item, i) => {
-        return <div key={`work-${i}`} className="pb-4 mb-4 border-b border-neutral-800 text-white">
-          <div className="flex items-center justify-between cursor-pointer">
-            <div className="flex items-start gap-4 flex-1">
-              <div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border shadow-md bg-black border-neutral-900">
-                <img src={item.image} alt="logo" className="w-4/5 h-4/5 object-contain" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-1">
-                  <h3 className="font-medium text-sm">{item.name}</h3>
-                </div>
-                <span className="text-xs text-neutral-300">{item.summary}</span><br />
-                <span className=" text-xs text-neutral-500">jan 2025 - may 2025</span>
-              </div>
-            </div>
-            <button className="ml-2 p-1 text-blue-500"></button>
-          </div>
-        </div>
+        return <WorkCard key={`work-${i}`} work={item} />
+      })}
+      <SectionHeader title='articles' style='mt-12' />
+      {articles && [articles?.at(0), articles?.at(0)]?.map((article) => {
+        return <>{article && <ArticleCard article={article} />}</>
       })}
     </>
   }
   return <></>
+}
+
+function ArticleCard({ article }: { article: Article }) {
+  return <div className="pb-4 mb-4 border-b border-neutral-800 cursor-pointer">
+    <div className="flex items-start gap-3 mb-2">
+      <div className="flex-1">
+        <span className="font-medium text-sm">{article?.name}</span>
+      </div>
+      <span className="text-xs text-neutral-500">{article?.publicationDate}</span>
+    </div>
+    <p className="pb-4 text-neutral-400 text-sm leading-relaxed">{article?.summary}</p>
+    {article?.tags?.map((tag, i) => {
+      return <span className={`${i > 0 ? "ml-2 " : ""}text-xs px-2 py-1 rounded-full bg-neutral-900 text-neutral-500 border border-neutral-800`}>
+        {tag}
+      </span>
+    })}
+  </div>
+}
+
+function WorkCard({ work }: { work: Work }) {
+  return <div className="pb-4 mb-4 border-b border-neutral-800 text-[#25282a] dark:text-white">
+    <div className="flex items-center justify-between cursor-pointer">
+      <div className="flex items-start gap-4 flex-1">
+        <div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border shadow-md bg-black border-neutral-900">
+          <img src={work.image} alt="logo" className="w-4/5 h-4/5 object-contain" />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <h3 className="font-medium text-sm">{work.name}</h3>
+            <span className=" text-xs text-neutral-500">{work.startDate} - {work.endDate}</span>
+          </div>
+          <span className="mb-4 text-neutral-400 text-sm leading-relaxed">{work.summary}</span><br />
+          <div className='mt-4'>
+            {work?.tags?.map((tag, i) => {
+              return <span className={`${i > 0 ? "ml-2 " : ""}text-xs px-2 py-1 rounded-full bg-neutral-900 text-neutral-500 border border-neutral-800`}>
+                {tag}
+              </span>
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 }
 
 export default App
