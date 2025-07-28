@@ -67,7 +67,7 @@ function App() {
             <a href="mailto:bandamwai@gmail.com" className="p-2 rounded-full text-[#25282a] dark:text-neutral-400 hover:text-blue-500 hover:bg-neutral-300 dark:hover:bg-neutral-800 transition-all duration-200" title="Email">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mail"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
             </a>
-            <a href="/Mwai_Banda_Resume.pdf" download="Resume" className="p-2 rounded-full text-[#25282a] dark:text-neutral-400 hover:text-blue-500 hover:bg-neutral-300 dark:hover:bg-neutral-800 transition-all duration-200" title="Resume">
+            <a href="/resume.pdf" download="Resume.pdf" className="p-2 rounded-full text-[#25282a] dark:text-neutral-400 hover:text-blue-500 hover:bg-neutral-300 dark:hover:bg-neutral-800 transition-all duration-200" title="Resume">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
             </a>
             <div className="w-px h-5 mx-2 bg-neutral-500 dark:bg-neutral-700"></div>
