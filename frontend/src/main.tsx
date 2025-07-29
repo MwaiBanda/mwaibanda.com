@@ -15,7 +15,7 @@ createRoot(document.getElementById('root')!).render(
         <QueryClientProvider client={queryClient}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:article" element={<Blog />} />
           </Routes>
         </QueryClientProvider>
       </ThemeProvider>

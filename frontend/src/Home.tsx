@@ -6,16 +6,17 @@ import { useQuery } from '@tanstack/react-query'
 import type { Work } from './model/work'
 import type { Article } from './model/article'
 import ActionBar from './components/ui/action-buton'
+import { CacheKeys } from './utils/constants'
 
 function Home() {
   const [showContent, setShowContent] = useState(false)
   const work = useQuery({
-    queryKey: ['work'], queryFn: async () => {
+    queryKey: [CacheKeys.WORK], queryFn: async () => {
       return (await (await fetch("/api/v1/work")).json()) as Work[]
     },
   })
   const articles = useQuery({
-    queryKey: ['articles'], queryFn: async () => {
+    queryKey: [CacheKeys.ARTICLES], queryFn: async () => {
       return (await (await fetch("/api/v1/articles")).json()) as Article[]
     },
   })
@@ -82,7 +83,7 @@ function MainContent({ show, work, articles }: MainContentProps) {
 
 function ArticleCard({ article }: { article: Article }) {
   return <div className="pb-4 mb-4 border-b border-neutral-300 dark:border-neutral-800 cursor-pointer">
-    <a href='/blog'>
+    <a href={`/blog/${article.name}`}>
       <div className="flex items-start gap-3 mb-2">
         <div className="flex-1">
           <span className="font-medium text-sm">{article?.name}</span>

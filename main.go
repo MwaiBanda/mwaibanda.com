@@ -37,7 +37,7 @@ func main() {
 	e.Static("/assets", "frontend/dist/assets")
 	e.File("/resume.pdf", "frontend/dist/resume.pdf") 
 	e.File("/", "frontend/dist/index.html")
-	e.File("/blog", "frontend/dist/index.html")
+	e.File("/blog/:article", "frontend/dist/index.html")
 	api := e.Group("/api")
 	api.Use(middleware.CORS())
 	v1 := api.Group("/v1")

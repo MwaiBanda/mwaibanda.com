@@ -5,24 +5,27 @@ import ReactMarkdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import ActionBar from "./components/ui/action-buton";
+import { useParams } from "react-router";
+import { CacheKeys } from "./utils/constants";
 
 export default function Blog() {
+    const { article } = useParams()
     const articles = useQuery({
-        queryKey: ['articles'], queryFn: async () => {
+        queryKey: [CacheKeys.ARTICLES], queryFn: async () => {
             return (await (await fetch("/api/v1/articles")).json()) as Article[]
         },
     })
-    const [article, setArticle] = useState<Article | undefined>(undefined)
+    const [currentArticle, setArticle] = useState<Article | undefined>(undefined)
     useEffect(() => {
-        if (articles.data) {
-            setArticle(articles.data?.at(0))
+        if (articles.data && article) {
+            setArticle(articles.data?.find((a) => a.name == decodeURIComponent(article)))
         }
     }, [articles])
     return <div className="flex flex-col items-center justify-center">
         <div className="flex flex-col items-center justify-start max-w-[838px] md:min-w-[838px] min-w-[90vw] md:pb-8 text-base leading-9 md:min-h-[550] pb-4">
-            <img src={article?.image} alt="" className="min-h-full min-w-full" />
-            <p className="text-3xl font-bold mt-8 mb-4">{article?.name}</p>
-            <p className="text-2xl font-medium text-center">{article?.summary}</p>
+            <img src={currentArticle?.image} alt="" className="min-h-full min-w-full" />
+            <p className="text-3xl font-bold mt-8 mb-4">{currentArticle?.name}</p>
+            <p className="text-2xl font-medium text-center">{currentArticle?.summary}</p>
         </div>
         <div className="max-w-[738px] md:min-w-[738px] min-w-[90vw] pb-[100px] text-base leading-9 mx-8">
             {article && <ReactMarkdown
@@ -47,7 +50,7 @@ export default function Blog() {
                         />
                     )
                 }}
-            >{article.body}</ReactMarkdown>}
+            >{currentArticle?.body}</ReactMarkdown>}
         </div>
         <ActionBar />
     </div>
