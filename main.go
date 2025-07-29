@@ -37,6 +37,7 @@ func main() {
 	e.Static("/assets", "frontend/dist/assets")
 	e.File("/resume.pdf", "frontend/dist/resume.pdf") 
 	e.File("/", "frontend/dist/index.html")
+	e.File("/blog", "frontend/dist/index.html")
 	api := e.Group("/api")
 	api.Use(middleware.CORS())
 	v1 := api.Group("/v1")
@@ -87,13 +88,16 @@ func main() {
 			{
 				Name:            "Clean Archictecture",
 				PublicationDate: "27th Jun, 2022",
+				Image: "https://cdn.hashnode.com/res/hashnode/image/upload/v1655934826967/13qIEfNif.png?w=1600&h=840&fit=crop&crop=entropy&auto=compress,format&format=webp",
 				Summary:         "Clean Architecture in iOS & Android development. Learn about clean architecture, loose coupling, designing beautiful, maintainable & testable code.",
 				Body: `Just like a building architect maps out and separates a building space into different levels, rooms & entrances/exits. So do we separate layers of our apps into different parts to have complete and elegant [loosely coupled](https://en.wikipedia.org/wiki/Loose_coupling) systems. Software Architect is all about [separation of concerns](https://en.wikipedia.org/wiki/Separation_of_concerns) to better structure a project, in-order to allow for easier data flow, testing and maintainability.
 
  We as architects, have various types of architectural patterns to achieve said separation, most common in mobile development are: MVC, MVP, MVVM, Viper, Composable & Clean Architecture. These all architectural patterns aim to achieve the same goal, though varying in their approach/naming strive to achieve separation of concerns.
 <h3> Clean Architecture </h3>
 
-![clean.png](https://cdn.hashnode.com/res/hashnode/image/upload/v1656212923022/jWEYA0uVo.png align="center")
+<p align="center">
+  <img src="https://cdn.hashnode.com/res/hashnode/image/upload/v1656212923022/jWEYA0uVo.png" alt="clean.png" />
+</p>
 
 
 Clean Architecture, is architectural pattern manifested into this world by non other than Uncle Bob([Robert C. Martin)](https://en.wikipedia.org/wiki/Robert_C._Martin). The rings represent each layer of an application, the outermost layers are systems/frameworks of an application, whereas, the inner circles are rules, and policies of an application. The pattern follows the dependence rule, which states that:
@@ -111,7 +115,7 @@ Which, means foreach outer layer, each outer layer should only reference the clo
 - **Platform agnostic** - meaning, this architectural pattern is not specific to any platform for which you want to build an application whether it be Android, iOS, Web and even console applications.
 - **Independent of UI** - meaning, you can easily replace our UI layer, commonly called the Presentation layer in mobile development with any type of UI framework. So, you can switch out your presentation layer frameworks i.e. XML to Jetpack Compose on Android, UIKit to SwiftUI on iOS, vice-versa and have your application work the same because your core business logic doesn’t change.
 - **Testability** - meaning,  you can easily test your core business logic since it's separated out and knows nothing of the UI, database or server.
-- **Independent of database ** - meaning, you can easily replace our data layer, any type of database to cache your data or any type of networking library to fetch your data.
+- **Independent of database** - meaning, you can easily replace our data layer, any type of database to cache your data or any type of networking library to fetch your data.
 
 <h3>Clean Architecture in Mobile Development</h3>
 
@@ -128,7 +132,7 @@ Now let's look at an [open source multiplatform podcast and radio stream app](ht
   </tr>
  </table>
 
-<h3> Application Layers </h3>
+<h3>Application Layers</h3>
 
 The main layers of separation are: <br>
 
@@ -139,7 +143,7 @@ The main layers of separation are: <br>
 - **Di(Dependency Injection)** - contains, different app specific modules for providing dependencies specific to each module, this layer is optional because you can manually provide your dependencies. Also on iOS with SwiftUI, the framework provides ways of initialising dependencies within views, by specifying with property wrappers what kind of dependency it is.
   
 Now let's discuss clean architecture starting with the innermost layer and going outwards 
-<h3> Data </h3>
+**Data**
 
 <table>
   <tr>
