@@ -73,7 +73,7 @@ function MainContent({ show, work, articles }: MainContentProps) {
         return <WorkCard key={`work-${i}`} work={item} />
       })}
       <SectionHeader title='articles' style='mt-12' />
-      {articles && [articles?.at(0), articles?.at(0)]?.map((article) => {
+      {articles && articles?.map((article) => {
         return <>{article && <ArticleCard article={article} />}</>
       })}
     </>
