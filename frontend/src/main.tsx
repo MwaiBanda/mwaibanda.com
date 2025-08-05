@@ -14,6 +14,7 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <QueryClientProvider client={queryClient}>
           <Routes>
+            <Route path='/portfolio' element={<Home />}/>
             <Route path="/" element={<Home />} />
             <Route path="/blog/:article" element={<Blog />} />
           </Routes>
