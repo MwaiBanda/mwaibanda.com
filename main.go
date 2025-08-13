@@ -75,7 +75,7 @@ func main() {
 	v1.GET("/articles", func(c echo.Context) error {
 		work := []Article{
 			{
-				Name:            "Clean Archictecture",
+				Name:            "Clean Architecture",
 				PublicationDate: "27th Jun, 2022",
 				Image: "https://cdn.hashnode.com/res/hashnode/image/upload/v1655934826967/13qIEfNif.png?w=1600&h=840&fit=crop&crop=entropy&auto=compress,format&format=webp",
 				Summary:         "Clean Architecture in iOS & Android development. Learn about clean architecture, loose coupling, designing beautiful, maintainable & testable code.",

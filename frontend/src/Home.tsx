@@ -41,7 +41,7 @@ function Home() {
               .deleteChars(1)
               .typeString("<br><br>I'm enamored with design, its ability to shape reality, the journey from idea to concept, and then to product. All while being authentic & original, empathizing with the end-user to provide an experience that's uniquely tailored to meet that one user's need while fulfilling the business requirement.")
               .pauseFor(65)
-              .typeString(`<br><br>I'm currently working as a Mobile Developer at <a class="underline font-bold" href="https://cbn.com/">CBN</a>, a faith-based organisation building world-class digital media app(Android, iOS, Roku & Web) experiences ranging from video streaming to guided learning experiences.`)
+              .typeString(`<br><br>I'm currently working as a Mobile Developer at <a class="underline font-bold" href="https://cbn.com/">CBN</a>, a faith-based organization building world-class digital media app(Android, iOS, Roku & Web) experiences ranging from video streaming to guided learning experiences.`)
               .callFunction(() => {
                 setShowContent(true)
               })
