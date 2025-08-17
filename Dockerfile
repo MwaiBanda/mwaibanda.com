@@ -16,6 +16,14 @@ RUN pnpm run build
 
 FROM golang:1.24-alpine AS backend
 
+# Enable CGO
+ENV CGO_ENABLED=1 \
+    GOOS=linux \
+    GOARCH=amd64
+
+# Install required build tools for CGO
+RUN apt-get update && apt-get install -y gcc libc6-dev
+
 WORKDIR /app
 
 # Pre-cache Go modules
