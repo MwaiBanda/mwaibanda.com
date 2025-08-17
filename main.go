@@ -21,6 +21,10 @@ func main() {
 	server.File("/portfolio", "frontend/dist/index.html")
 	server.File("/blog/:article", "frontend/dist/index.html")
 
+	server.RouteNotFound("/*", func(c echo.Context) error {
+		return c.File("frontend/dist/index.html")
+	})
+
 	api := server.Group("/api")
 	api.Use(middleware.CORS())
 
