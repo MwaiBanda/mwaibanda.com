@@ -1,20 +1,21 @@
+# --- FRONTEND BUILD STAGE ---
 FROM node:20-alpine AS frontend
 
-# Install pnpm globally
+# Install pnpm
 RUN npm install -g pnpm
 
-# Set working directory to frontend folder
 WORKDIR /app
 
-# Copy and install frontend dependencies
+# Install frontend dependencies
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install
 
-# Copy frontend source and build
+# Copy frontend source and build it
 COPY frontend ./
 RUN pnpm run build
 
-FROM golang:1.24-alpine AS backend
+# --- BACKEND BUILD STAGE ---
+FROM golang:1.24 as backend
 
 # Enable CGO
 ENV CGO_ENABLED=1 \
@@ -31,12 +32,17 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 
-# Copy all source code
+# Copy backend source
 COPY . .
 COPY --from=frontend /app/dist ./frontend/dist
 
-# Build the binary
+# Build the Go app
 RUN go build -o ./out/dist .
 
-# Run the app
-CMD ["./out/dist"]
+# Final image (optional: minimal size)
+FROM debian:bookworm-slim
+
+WORKDIR /app
+COPY --from=backend /app/out/dist /app/app
+
+CMD ["/app/app"]
