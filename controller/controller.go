@@ -28,8 +28,10 @@ func GetInstance() *Controller {
 		Context: context.Background(),
 	}
 	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	if os.Getenv("ENV") == "DEV" {
+		if err != nil {
+			log.Fatal("Error loading .env file")
+		}
 	}
 	tempDir, err := os.MkdirTemp("", "libsql-*")
 	if err != nil {
