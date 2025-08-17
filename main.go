@@ -27,7 +27,7 @@ func main() {
 	api.Use(middleware.CORS())
 	v1 := api.Group("/v1")
 	v1.GET("/work", func(c echo.Context) error {
-		work := []Project{
+		work := []model.Project{
 			{
 				Name:        "Momentum",
 				StartDate:   "May 2024",
@@ -57,7 +57,7 @@ func main() {
 	})
 
 	v1.GET("/articles", func(c echo.Context) error {
-		work := []Article{
+		work := []model.Article{
 			{
 				Name:            "Clean Architecture",
 				PublicationDate: "27th Jun, 2022",
