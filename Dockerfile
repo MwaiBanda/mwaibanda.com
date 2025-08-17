@@ -34,5 +34,7 @@ FROM golang:1.24
 
 WORKDIR /app
 COPY --from=backend /app/app /app/app
+# Copy built frontend files
+COPY --from=backend /app/frontend/dist /app/frontend/dist
 
 CMD ["/app/app"]
