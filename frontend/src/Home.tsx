@@ -3,13 +3,16 @@ import './Home.css'
 import Typewriter from "typewriter-effect"
 import SectionHeader from './components/ui/section-header'
 import { useQuery } from '@tanstack/react-query'
+import { ChevronsDown } from 'lucide-react'
 import type { Work } from './model/work'
 import type { Article } from './model/article'
 import ActionBar from './components/ui/action-buton'
+import { Button } from './components/ui/button'
 import { CacheKeys } from './utils/constants'
 
 function Home() {
   const [showContent, setShowContent] = useState(false)
+  const [skipIntro, setSkipIntro] = useState(false)
   const work = useQuery({
     queryKey: [CacheKeys.WORK], queryFn: async () => {
       return (await (await fetch("/api/v1/work")).json()) as Work[]
@@ -34,19 +37,37 @@ function Home() {
         <div className='max-w-[600px] md:min-w-[600px] min-w-[90vw] pb-[80px]'>
           <h1>Mwai Banda</h1>
           <h2 className="mb-12 text-neutral-600 dark:text-neutral-400 ">Software Engineer</h2>
-          <Typewriter onInit={(t) => {
-            t.pauseFor(65)
-              .changeDelay(65)
-              .typeString("I design, develop & deploy end-to-end solutions for Android, iOS, iPadOS, Roku & Web(Frontend & Backend). ")
-              .deleteChars(1)
-              .typeString("<br><br>I'm enamored with design, its ability to shape reality, the journey from idea to concept, and then to product. All while being authentic & original, empathizing with the end-user to provide an experience that's uniquely tailored to meet that one user's need while fulfilling the business requirement.")
-              .pauseFor(65)
-              .typeString(`<br><br>I'm currently working as a Mobile Developer at <a class="underline font-bold" href="https://cbn.com/">CBN</a>, a faith-based organization building world-class digital media app(Android, iOS, Roku & Web) experiences ranging from video streaming to guided learning experiences.`)
-              .callFunction(() => {
+          <div className="relative">
+            <IntroCopy className="invisible" ariaHidden />
+            <div className="absolute inset-0">
+              {skipIntro ? <IntroCopy /> : <Typewriter onInit={(t) => {
+                t.pauseFor(65)
+                  .changeDelay(65)
+                  .typeString("I design, develop & deploy end-to-end solutions for Android, iOS, iPadOS, Roku & Web(Frontend & Backend). ")
+                  .deleteChars(1)
+                  .typeString("<br><br>I'm enamored with design, its ability to shape reality, the journey from idea to concept, and then to product. All while being authentic & original, empathizing with the end-user to provide an experience that's uniquely tailored to meet that one user's need while fulfilling the business requirement.")
+                  .pauseFor(65)
+                  .typeString(`<br><br>I'm currently working as a Mobile Developer at <a class="underline font-bold" href="https://cbn.com/">CBN</a>, a faith-based organization building world-class digital media app(Android, iOS, Roku & Web) experiences ranging from video streaming to guided learning experiences.`)
+                  .callFunction(() => {
+                    setShowContent(true)
+                  })
+                  .start();
+              }} />}
+            </div>
+          </div>
+          {!showContent && <div className="mt-8 flex justify-center">
+            <Button
+              className="skip-intro-button rounded-full border border-neutral-300 bg-white/95 px-4 py-2 text-[#25282a] shadow-lg shadow-black/10 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-black/90 dark:text-white dark:hover:bg-neutral-900"
+              onClick={() => {
+                setSkipIntro(true)
                 setShowContent(true)
-              })
-              .start();
-          }} />
+              }}
+              variant="outline"
+            >
+              Skip
+              <ChevronsDown className="size-4" aria-hidden="true" />
+            </Button>
+          </div>}
           <MainContent show={showContent} work={work.data ?? []} articles={articles.data ?? []} />
           {showContent && <span className='text-xs text-neutral-500'>© 2025 Copyright - Mwai Banda</span>}
         </div>
@@ -54,6 +75,14 @@ function Home() {
       <ActionBar />
     </div>
   )
+}
+
+function IntroCopy({ className = '', ariaHidden = false }: { className?: string, ariaHidden?: boolean }) {
+  return <div className={`space-y-6 ${className}`} aria-hidden={ariaHidden}>
+    <p>I design, develop & deploy end-to-end solutions for Android, iOS, iPadOS, Roku & Web(Frontend & Backend).</p>
+    <p>I'm enamored with design, its ability to shape reality, the journey from idea to concept, and then to product. All while being authentic & original, empathizing with the end-user to provide an experience that's uniquely tailored to meet that one user's need while fulfilling the business requirement.</p>
+    <p>I'm currently working as a Mobile Developer at <a className="underline font-bold" href="https://cbn.com/">CBN</a>, a faith-based organization building world-class digital media app(Android, iOS, Roku & Web) experiences ranging from video streaming to guided learning experiences.</p>
+  </div>
 }
 
 interface MainContentProps {
