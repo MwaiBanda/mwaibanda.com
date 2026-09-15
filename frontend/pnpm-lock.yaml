@@ -93,9 +93,6 @@ importers:
       globals:
         specifier: ^16.5.0
         version: 16.5.0
-      node]:
-        specifier: link:@types/node]
-        version: link:@types/node]
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
