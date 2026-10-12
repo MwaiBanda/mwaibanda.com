@@ -6,6 +6,6 @@ type Service struct {
 	repository project.Repository
 }
 
-func New(repository project.Repository) *Service {
+func GetInstance(repository project.Repository) *Service {
 	return &Service{repository: repository}
 }

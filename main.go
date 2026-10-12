@@ -43,19 +43,15 @@ func main() {
 		slog.Error("failed running database migrations", "error", err)
 		os.Exit(1)
 	}
-	articles := articleService.New(articleRepository.GetInstance(database.DB))
-	projects := projectService.New(projectRepository.GetInstance(database.DB))
-	handler := transport.New(articles, projects)
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	articles := articleService.GetInstance(articleRepository.GetInstance(database.DB))
+	projects := projectService.GetInstance(projectRepository.GetInstance(database.DB))
+	handler := transport.GetInstance(articles, projects)
+
 	server.Static("/assets", "frontend/dist/assets")
 	server.File("/resume.pdf", "frontend/dist/resume.pdf")
 	server.File("/", "frontend/dist/index.html")
 	server.File("/portfolio", "frontend/dist/index.html")
 	server.File("/blog/:article", "frontend/dist/index.html")
-
 	server.RouteNotFound("/*", func(c echo.Context) error {
 		return c.File("frontend/dist/index.html")
 	})
@@ -71,7 +67,7 @@ func main() {
 	defer stop()
 	serverErrors := make(chan error, 1)
 	go func() {
-		serverErrors <- server.Start("0.0.0.0:" + port)
+		serverErrors <- server.Start("0.0.0.0:" + configuration.Port)
 	}()
 	select {
 	case err := <-serverErrors:

@@ -10,6 +10,6 @@ type Handler struct {
 	projects *projectService.Service
 }
 
-func New(articles *articleService.Service, projects *projectService.Service) *Handler {
+func GetInstance(articles *articleService.Service, projects *projectService.Service) *Handler {
 	return &Handler{articles: articles, projects: projects}
 }
