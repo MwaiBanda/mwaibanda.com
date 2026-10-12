@@ -11,7 +11,7 @@ COPY frontend ./
 RUN pnpm run build
 
 # --- BACKEND BUILD STAGE ---
-FROM golang:1.24 AS backend
+FROM golang:1.26 AS backend
 
 ENV CGO_ENABLED=1 \
     GOOS=linux \
@@ -30,7 +30,7 @@ COPY --from=frontend /app/dist ./frontend/dist
 RUN go build -o app .
 
 # --- FINAL STAGE: SAME AS BUILDER TO AVOID GLIBC ISSUES ---
-FROM golang:1.24
+FROM golang:1.26
 
 WORKDIR /app
 COPY --from=backend /app/app /app/app
