@@ -1,6 +1,6 @@
 package project
 
-import "MwaiBanda/internal/domain/project"
+import "MwaiBanda/backend/domain/project"
 
 type Service struct {
 	repository project.Repository

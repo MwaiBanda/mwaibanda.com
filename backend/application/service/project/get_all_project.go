@@ -3,7 +3,7 @@ package project
 import (
 	"context"
 
-	"MwaiBanda/internal/domain/project"
+	"MwaiBanda/backend/domain/project"
 )
 
 func (s *Service) GetAllProjects(ctx context.Context) ([]project.ProjectResponse, error) {

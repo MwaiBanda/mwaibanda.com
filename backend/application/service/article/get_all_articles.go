@@ -3,7 +3,7 @@ package article
 import (
 	"context"
 
-	"MwaiBanda/internal/domain/article"
+	"MwaiBanda/backend/domain/article"
 )
 
 func (s *Service) GetAllArticles(ctx context.Context) ([]article.ArticleResponse, error) {

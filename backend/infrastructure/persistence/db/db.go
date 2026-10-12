@@ -1,7 +1,7 @@
 package db
 
 import (
-	"MwaiBanda/internal/application/config"
+	"MwaiBanda/backend/application/config"
 	"context"
 	"database/sql"
 	"embed"

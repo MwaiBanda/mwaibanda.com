@@ -1,12 +1,12 @@
 package main
 
 import (
-	"MwaiBanda/internal/application/config"
-	articleService "MwaiBanda/internal/application/service/article"
-	projectService "MwaiBanda/internal/application/service/project"
-	transport "MwaiBanda/internal/infrastructure/http"
-	articleRepository "MwaiBanda/internal/infrastructure/persistence/repository/article"
-	projectRepository "MwaiBanda/internal/infrastructure/persistence/repository/project"
+	"MwaiBanda/backend/application/config"
+	articleService "MwaiBanda/backend/application/service/article"
+	projectService "MwaiBanda/backend/application/service/project"
+	transport "MwaiBanda/backend/infrastructure/http"
+	articleRepository "MwaiBanda/backend/infrastructure/persistence/repository/article"
+	projectRepository "MwaiBanda/backend/infrastructure/persistence/repository/project"
 	"context"
 	"errors"
 	"log/slog"
@@ -16,7 +16,8 @@ import (
 	"syscall"
 	"time"
 
-	"MwaiBanda/internal/infrastructure/persistence/db"
+	"MwaiBanda/backend/infrastructure/persistence/db"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )

@@ -3,8 +3,8 @@ package project
 import (
 	"context"
 
-	"MwaiBanda/internal/domain/project"
-	"MwaiBanda/internal/infrastructure/persistence"
+	"MwaiBanda/backend/domain/project"
+	"MwaiBanda/backend/infrastructure/persistence"
 )
 
 func (r *Repository) GetAllProjects(ctx context.Context) ([]project.Project, error) {

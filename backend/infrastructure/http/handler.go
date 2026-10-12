@@ -1,8 +1,8 @@
 package http
 
 import (
-	articleService "MwaiBanda/internal/application/service/article"
-	projectService "MwaiBanda/internal/application/service/project"
+	articleService "MwaiBanda/backend/application/service/article"
+	projectService "MwaiBanda/backend/application/service/project"
 )
 
 type Handler struct {
