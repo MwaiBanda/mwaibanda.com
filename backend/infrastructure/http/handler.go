@@ -6,10 +6,10 @@ import (
 )
 
 type Handler struct {
-	articles *articleService.Service
-	projects *projectService.Service
+	articles articleService.UseCase
+	projects projectService.UseCase
 }
 
-func GetInstance(articles *articleService.Service, projects *projectService.Service) *Handler {
+func GetInstance(articles articleService.UseCase, projects projectService.UseCase) *Handler {
 	return &Handler{articles: articles, projects: projects}
 }

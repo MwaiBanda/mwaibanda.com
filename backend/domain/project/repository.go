@@ -3,5 +3,5 @@ package project
 import "context"
 
 type Repository interface {
-	GetAllProjects(context.Context) ([]Project, error)
+	GetAllProjects(ctx context.Context) ([]Project, error)
 }

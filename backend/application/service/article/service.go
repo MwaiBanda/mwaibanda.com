@@ -1,6 +1,14 @@
 package article
 
-import "MwaiBanda/backend/domain/article"
+import (
+	"context"
+
+	"MwaiBanda/backend/domain/article"
+)
+
+type UseCase interface {
+	GetAllArticles(ctx context.Context) ([]Response, error)
+}
 
 type Service struct {
 	repository article.Repository

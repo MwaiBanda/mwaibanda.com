@@ -2,18 +2,20 @@ package project
 
 import (
 	"context"
-
-	"MwaiBanda/backend/domain/project"
 )
 
-func (s *Service) GetAllProjects(ctx context.Context) ([]project.ProjectResponse, error) {
+func (s *Service) GetAllProjects(ctx context.Context) ([]Response, error) {
 	projects, err := s.repository.GetAllProjects(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var response = make([]project.ProjectResponse, len(projects))
+	var response = make([]Response, len(projects))
 	for i, p := range projects {
-		response[i] = *p.ToResponse()
+		projectResponse, err := toResponse(p)
+		if err != nil {
+			return nil, err
+		}
+		response[i] = projectResponse
 	}
 	return response, nil
 }

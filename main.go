@@ -66,8 +66,15 @@ func main() {
 	shutdownContext, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	serverErrors := make(chan error, 1)
+	httpServer := &http.Server{
+		Addr:              "0.0.0.0:" + configuration.Port,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 	go func() {
-		serverErrors <- server.Start("0.0.0.0:" + configuration.Port)
+		serverErrors <- server.StartServer(httpServer)
 	}()
 	select {
 	case err := <-serverErrors:

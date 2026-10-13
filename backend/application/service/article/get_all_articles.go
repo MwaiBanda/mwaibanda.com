@@ -2,18 +2,20 @@ package article
 
 import (
 	"context"
-
-	"MwaiBanda/backend/domain/article"
 )
 
-func (s *Service) GetAllArticles(ctx context.Context) ([]article.ArticleResponse, error) {
+func (s *Service) GetAllArticles(ctx context.Context) ([]Response, error) {
 	articles, err := s.repository.GetAllArticles(ctx)
 	if err != nil {
 		return nil, err
 	}
-	response := make([]article.ArticleResponse, len(articles))
+	response := make([]Response, len(articles))
 	for i := range articles {
-		response[i] = articles[i].ToResponse()
+		articleResponse, err := toResponse(articles[i])
+		if err != nil {
+			return nil, err
+		}
+		response[i] = articleResponse
 	}
 	return response, nil
 }

@@ -1,6 +1,14 @@
 package project
 
-import "MwaiBanda/backend/domain/project"
+import (
+	"context"
+
+	"MwaiBanda/backend/domain/project"
+)
+
+type UseCase interface {
+	GetAllProjects(ctx context.Context) ([]Response, error)
+}
 
 type Service struct {
 	repository project.Repository

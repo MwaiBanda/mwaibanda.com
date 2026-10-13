@@ -3,5 +3,5 @@ package article
 import "context"
 
 type Repository interface {
-	GetAllArticles(context.Context) ([]Article, error)
+	GetAllArticles(ctx context.Context) ([]Article, error)
 }
