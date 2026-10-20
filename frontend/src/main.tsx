@@ -1,25 +1,23 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import Home from './Home.tsx'
-import { ThemeProvider } from './components/ui/theme-provider.tsx'
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClient } from './lib/react-query.ts'
-import { BrowserRouter, Route, Routes } from "react-router";
-import Blog from './Blog.tsx'
+import Router from './interfaces/router/router.tsx'
+import type { Services } from './application/services.ts'
+import { Service as ArticleService } from './application/service/article/service.ts'
+import { ArticleRepository } from './infrastructure/http/article/repository.ts'
+import { httpClient } from './infrastructure/http/client.ts'
+import { Service as WorkService} from './application/service/work/service.ts'
+import { WorkRepository } from './infrastructure/http/work/repository.ts'
+import { ApplicationContext } from './interfaces/presentation/application-context.ts'
 
+const application: Services = {
+  articles: new ArticleService(new ArticleRepository(httpClient)),
+  work: new WorkService(new WorkRepository(httpClient))
+}
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <QueryClientProvider client={queryClient}>
-          <Routes>
-            <Route path='/portfolio' element={<Home />}/>
-            <Route path="/" element={<Home />} />
-            <Route path="/blog/:article" element={<Blog />} />
-          </Routes>
-        </QueryClientProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+    <ApplicationContext.Provider value={application}>
+      <Router />
+    </ApplicationContext.Provider>
   </StrictMode>,
 )

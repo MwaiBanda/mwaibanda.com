@@ -1,15 +1,16 @@
 import { useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
-import { type Article } from "./model/article"
+import { type Article } from "../../../../domain/article/entity"
 import ReactMarkdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
-import ActionBar from "./components/ui/action-buton";
+import ActionBar from "../../components/action-buton";
 import { useParams } from "react-router";
-import { CacheKeys } from "./utils/constants";
+import { CacheKeys } from "../../../../application/config/constants";
  import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'; // or { Light as SyntaxHighlighter }
 import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism'; // Choose a style
 import copy from "copy-to-clipboard"
+import { useApplication } from "../../application-context";
 
 const CodeBlock: React.FC<{
   inline?: boolean;
@@ -75,10 +76,12 @@ const CodeBlock: React.FC<{
 const CodeRenderer = (props: any) => <CodeBlock {...props} />;
 
 export default function Blog() {
+    const application = useApplication()
     const { article } = useParams()
+
     const articles = useQuery({
         queryKey: [CacheKeys.ARTICLES], queryFn: async () => {
-            return (await (await fetch("/api/v1/articles")).json()) as Article[]
+            return application.articles.getAllArticles()
         },
     })
     const [currentArticle, setArticle] = useState<Article | undefined>(undefined)
