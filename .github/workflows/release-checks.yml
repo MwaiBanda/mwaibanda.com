@@ -1,0 +1,61 @@
+name: Release Checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm audit --prod --audit-level high
+      - run: pnpm release
+        env:
+          CONTENT_API_URL: ${{ vars.CONTENT_API_URL || 'https://mwaibanda.com' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-site
+          path: frontend/dist
+          include-hidden-files: true
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go vet ./...
+      - run: go build ./...
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --build-arg CONTENT_API_URL="$CONTENT_API_URL" -t mwaibanda:check .
+        env:
+          CONTENT_API_URL: ${{ vars.CONTENT_API_URL || 'https://mwaibanda.com' }}
+      - uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: mwaibanda:check
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'

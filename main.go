@@ -24,6 +24,11 @@ import (
 
 func main() {
 	server := echo.New()
+	server.Use(middleware.SecureWithConfig(middleware.SecureConfig{
+		XFrameOptions:         "DENY",
+		ReferrerPolicy:        "strict-origin-when-cross-origin",
+		ContentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+	}))
 	configuration, err := config.LoadConfig()
 	if err != nil {
 		slog.Error("failed loading configuration", "error", err)
@@ -49,15 +54,15 @@ func main() {
 
 	server.Static("/assets", "frontend/dist/assets")
 	server.File("/resume.pdf", "frontend/dist/resume.pdf")
-	server.File("/", "frontend/dist/index.html")
-	server.File("/portfolio", "frontend/dist/index.html")
-	server.File("/blog/:article", "frontend/dist/index.html")
+	if err := transport.RegisterPublicPages(server, "frontend/dist"); err != nil {
+		slog.Error("failed registering public pages", "error", err)
+		os.Exit(1)
+	}
 	server.RouteNotFound("/*", func(c echo.Context) error {
 		return c.File("frontend/dist/index.html")
 	})
 
 	api := server.Group("/api")
-	api.Use(middleware.CORS())
 
 	v1 := api.Group("/v1")
 	v1.GET("/work", handler.GetProjects)

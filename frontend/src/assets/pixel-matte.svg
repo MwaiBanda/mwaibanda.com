@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">
+  <path fill="#1b1b1b" d="M4 8h2v2H4z M26 2h2v2h-2z M46 12h2v2h-2z M16 22h2v2h-2z M36 28h2v2h-2z M58 24h2v2h-2z M6 40h2v2H6z M26 46h2v2h-2z M48 40h2v2h-2z M14 58h2v2h-2z M40 56h2v2h-2z M60 52h2v2h-2z"/>
+  <path fill="#101010" d="M14 4h2v2h-2z M38 6h2v2h-2z M58 4h2v2h-2z M6 26h2v2H6z M28 18h2v2h-2z M50 30h2v2h-2z M18 36h2v2h-2z M38 42h2v2h-2z M58 38h2v2h-2z M4 54h2v2H4z M30 60h2v2h-2z M50 54h2v2h-2z"/>
+  <path fill="#181818" d="M20 12h2v2h-2z M52 18h2v2h-2z M24 32h2v2h-2z M44 22h2v2h-2z M12 48h2v2h-2z M34 50h2v2h-2z M54 60h2v2h-2z M60 14h2v2h-2z"/>
+</svg>

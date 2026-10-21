@@ -1,20 +1,17 @@
 import type { Article } from '../../../../../domain/article/entity'
+import { Link } from 'react-router'
+import TagList from '../../../components/tag-list'
+import { articlePath } from '../../../../router/article-url'
 
 export default function ArticleCard({ article }: { article: Article }) {
-  return <div className="pb-4 mb-4 border-b border-neutral-300 dark:border-neutral-800 cursor-pointer">
-    <a href={`/blog/${article.name}`}>
-      <div className="flex items-start gap-3 mb-2">
-        <div className="flex-1">
-          <span className="font-medium text-sm">{article?.name}</span>
-        </div>
-        <span className="text-xs text-neutral-500">{article?.publicationDate}</span>
+  return <div className="home-content-row pb-4 mb-4 border-b border-neutral-300 dark:border-neutral-800 cursor-pointer">
+    <Link to={articlePath(article.name)}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 mb-2">
+        <h3 className="home-content-title font-medium text-sm">{article.name}</h3>
+        {article.publicationDate && <span className="home-date">{article.publicationDate}</span>}
       </div>
-      <p className="pb-4 text-neutral-600  dark:text-neutral-400 text-sm leading-relaxed">{article?.summary}</p>
-      {article?.tags?.map((tag, i) => {
-        return <span className={`${i > 0 ? "ml-2 " : ""}text-xs px-2 py-1 rounded-full bg-neutral-300 text-neutral-800 dark:bg-neutral-900 dark:text-neutral-500 border border-neutral-400 dark:border-neutral-800`}>
-          {tag}
-        </span>
-      })}
-    </a>
+      <p className="pb-4 text-[15px] leading-6 font-normal text-neutral-600 dark:text-neutral-400 break-words">{article?.summary}</p>
+      <TagList tags={article.tags} />
+    </Link>
   </div>
 }

@@ -1,25 +1,23 @@
 import type { Work } from '../../../../../domain/work/enitity'
+import TagList from '../../../components/tag-list'
 
 export default function WorkCard({ work }: { work: Work }) {
-  return <div className="pb-4 mb-4 border-b border-neutral-300 dark:border-neutral-800  text-[#25282a] dark:text-white">
-    <a href={work.link} target='_blank'>
+  const dates = [work.startDate, work.endDate].filter((date) => date?.trim()).join(' - ')
+  return <div className="home-content-row pb-4 mb-4 border-b border-neutral-300 dark:border-neutral-800 text-[#25282a] dark:text-white">
+    <a href={work.link} target='_blank' rel="noopener noreferrer">
       <div className="flex items-center justify-between cursor-pointer">
         <div className="flex items-start gap-4 flex-1">
           <div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border shadow-md dark:bg-black border-neutral-300 dark:border-neutral-900">
-            <img src={work.image} alt="logo" className="w-4/5 h-4/5 object-contain" />
+            <img src={work.image} alt="" className="w-4/5 h-4/5 object-contain" />
           </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between gap-3 mb-1">
-              <h3 className="font-medium text-sm">{work.name}</h3>
-              <span className=" text-xs text-neutral-500">{work.startDate} - {work.endDate}</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 mb-1">
+              <h3 className="home-content-title font-medium text-sm">{work.name}</h3>
+              {dates && <span className="home-date">{dates}</span>}
             </div>
-            <span className="mb-4 text-neutral-600  dark:text-neutral-400 text-sm leading-relaxed">{work.summary}</span><br />
+            <p className="mt-2 text-[15px] leading-6 font-normal text-neutral-600 dark:text-neutral-400 break-words">{work.summary}</p>
             <div className='mt-4'>
-              {work?.tags?.map((tag, i) => {
-                return <span className={`${i > 0 ? "ml-2 " : ""}text-xs px-2 py-1 rounded-full bg-neutral-300 text-neutral-800 dark:bg-neutral-900 dark:text-neutral-500 border border-neutral-400 dark:border-neutral-800`}>
-                  {tag}
-                </span>
-              })}
+              <TagList tags={work.tags} />
             </div>
           </div>
         </div>

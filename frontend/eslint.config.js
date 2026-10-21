@@ -20,4 +20,18 @@ export default tseslint.config([
       globals: globals.browser,
     },
   },
+  {
+    files: ['scripts/*.mjs'],
+    extends: [js.configs.recommended],
+    languageOptions: { globals: globals.node },
+  },
+  {
+    files: ['src/interfaces/presentation/components/button.tsx', 'src/interfaces/presentation/components/theme-provider.tsx'],
+    rules: {
+      'react-refresh/only-export-components': ['error', {
+        allowConstantExport: true,
+        allowExportNames: ['buttonVariants', 'useTheme'],
+      }],
+    },
+  },
 ])
