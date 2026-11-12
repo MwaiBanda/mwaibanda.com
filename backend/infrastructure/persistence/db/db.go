@@ -59,12 +59,29 @@ func (i *Instance) Migrate() error {
 	)`); err != nil {
 		return err
 	}
+	if err := i.syncReplica(); err != nil {
+		return err
+	}
 	if _, err := i.DB.ExecContext(ctx, `INSERT INTO goose_db_version (version_id, is_applied)
 		SELECT 0, 1
 		WHERE NOT EXISTS (SELECT 1 FROM goose_db_version)`); err != nil {
 		return err
 	}
-	return goose.Up(i.DB.DB, "migrations")
+	if err := i.syncReplica(); err != nil {
+		return err
+	}
+	if err := goose.Up(i.DB.DB, "migrations"); err != nil {
+		return err
+	}
+	return i.syncReplica()
+}
+
+func (i *Instance) syncReplica() error {
+	if i.connector == nil {
+		return nil
+	}
+	_, err := i.connector.Sync()
+	return err
 }
 
 func (i *Instance) Close() error {

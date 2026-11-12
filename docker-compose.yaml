@@ -1,0 +1,49 @@
+name: mwaibandacom
+
+services:
+  mwaibanda-prod:
+    image: ${PRODUCTION_IMAGE:-mwaibandacom-web:latest}
+    platform: linux/arm64
+    build:
+      context: .
+      args:
+        CONTENT_API_URL: ${PRODUCTION_CONTENT_API_URL:-https://mwaibanda.com}
+    container_name: mwaibanda-io
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - path: ${MWAIBANDA_CONFIG_DIR:-${HOME}/.config/mwaibanda}/production.env
+        required: false
+    environment:
+      ENV: PROD
+      PORT: "8080"
+  mwaibanda-staging:
+    image: ${STAGING_IMAGE:-mwaibandacom-staging:latest}
+    platform: linux/arm64
+    build:
+      context: .
+      args:
+        CONTENT_API_URL: ${STAGING_CONTENT_API_URL:-https://staging.mwaibanda.com}
+    container_name: mwaibanda-staging
+    restart: unless-stopped
+    profiles:
+      - staging
+    ports:
+      - "127.0.0.1:8081:8080"
+    env_file:
+      - path: ${MWAIBANDA_CONFIG_DIR:-${HOME}/.config/mwaibanda}/staging.env
+        required: false
+    environment:
+      ENV: STAGING
+      PORT: "8080"
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    env_file:
+      - path: ${MWAIBANDA_CONFIG_DIR:-${HOME}/.config/mwaibanda}/tunnel.env
+        required: false
+    depends_on:
+      - mwaibanda-prod

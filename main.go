@@ -24,6 +24,7 @@ import (
 
 func main() {
 	server := echo.New()
+	server.Use(releaseMetadata(os.Getenv("RELEASE_SHA")))
 	server.Use(middleware.SecureWithConfig(middleware.SecureConfig{
 		XFrameOptions:         "DENY",
 		ReferrerPolicy:        "strict-origin-when-cross-origin",
@@ -95,6 +96,17 @@ func main() {
 		}
 		if err := <-serverErrors; err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("server stopped unexpectedly", "error", err)
+		}
+	}
+}
+
+func releaseMetadata(revision string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(context echo.Context) error {
+			if revision != "" {
+				context.Response().Header().Set("X-Release-Sha", revision)
+			}
+			return next(context)
 		}
 	}
 }
