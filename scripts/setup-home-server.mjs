@@ -39,7 +39,7 @@ createEnvironment('staging.env', {
 })
 createEnvironment('tunnel.env', { TUNNEL_TOKEN: source.TUNNEL_TOKEN })
 mkdirSync(resolve(deployment, 'scripts'), { recursive: true, mode: 0o700 })
-for (const filename of ['docker-compose.yaml', 'scripts/deploy.sh', 'scripts/ssh-deploy.sh']) {
+for (const filename of ['docker-compose.yaml', 'scripts/deploy.sh', 'scripts/ssh-deploy.sh', 'scripts/ssh-content.sh', 'scripts/content-snapshot.mjs']) {
   copyFileSync(resolve(repository, filename), resolve(deployment, filename))
   chmodSync(resolve(deployment, filename), filename.endsWith('.sh') ? 0o700 : 0o600)
 }
@@ -49,17 +49,19 @@ chmodSync(sshDirectory, 0o700)
 const authorizedKeys = resolve(sshDirectory, 'authorized_keys')
 let entries = existsSync(authorizedKeys) ? readFileSync(authorizedKeys, 'utf8').split('\n').filter(Boolean) : []
 for (const environment of ['production', 'staging']) {
-  const privateKey = resolve(config, `${environment}-deploy.key`)
-  if (!existsSync(privateKey)) {
-    const generated = spawnSync('ssh-keygen', ['-q', '-t', 'ed25519', '-N', '', '-C', `mwaibanda-${environment}-deploy`, '-f', privateKey], { encoding: 'utf8' })
-    if (generated.status !== 0) throw new Error('Could not generate a deployment SSH key')
+  for (const purpose of ['deploy', 'content']) {
+    const privateKey = resolve(config, `${environment}-${purpose}.key`)
+    if (!existsSync(privateKey)) {
+      const generated = spawnSync('ssh-keygen', ['-q', '-t', 'ed25519', '-N', '', '-C', `mwaibanda-${environment}-${purpose}`, '-f', privateKey], { encoding: 'utf8' })
+      if (generated.status !== 0) throw new Error(`Could not generate a ${purpose} SSH key`)
+    }
+    chmodSync(privateKey, 0o600)
+    const publicKey = readFileSync(`${privateKey}.pub`, 'utf8').trim()
+    const identity = publicKey.split(' ')[1]
+    const command = `/bin/bash "${resolve(deployment, `scripts/ssh-${purpose}.sh`)}" ${environment}`
+    entries = entries.filter(entry => !entry.split(' ').includes(identity))
+    entries.push(`restrict,command=${JSON.stringify(command)} ${publicKey}`)
   }
-  chmodSync(privateKey, 0o600)
-  const publicKey = readFileSync(`${privateKey}.pub`, 'utf8').trim()
-  const identity = publicKey.split(' ')[1]
-  const command = `/bin/bash "${resolve(deployment, 'scripts/ssh-deploy.sh')}" ${environment}`
-  entries = entries.filter(entry => !entry.split(' ').includes(identity))
-  entries.push(`restrict,command=${JSON.stringify(command)} ${publicKey}`)
 }
 writeFileSync(authorizedKeys, entries.join('\n') + '\n', { mode: 0o600 })
 chmodSync(authorizedKeys, 0o600)
@@ -74,3 +76,4 @@ console.log(`Deployment scripts: ${deployment}`)
 console.log('Existing environment files were preserved. Configure staging.env with a separate Turso database before deploying staging.')
 console.log('No running container was changed. Re-run setup after changing deployment scripts or Compose configuration.')
 console.log('Environment-restricted SSH keys and a pinned host key are installed. Upload each private key only to its matching GitHub environment secret.')
+console.log('For private content builds, configure CONTENT_SSH_KEY in each environment with its matching content key.')

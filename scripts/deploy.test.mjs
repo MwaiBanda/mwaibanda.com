@@ -4,7 +4,8 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync,
 import { tmpdir } from 'node:os'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
+import { createServer } from 'node:http'
 import { parseEnv } from 'node:util'
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -65,7 +66,7 @@ test('server setup preserves secrets and can be rerun without the repository .en
   const { directory, config } = fixture(context)
   const temporaryRepository = resolve(directory, 'repository')
   mkdirSync(resolve(temporaryRepository, 'scripts'), { recursive: true })
-  for (const filename of ['docker-compose.yaml', 'scripts/setup-home-server.mjs', 'scripts/deploy.sh', 'scripts/ssh-deploy.sh']) {
+  for (const filename of ['docker-compose.yaml', 'scripts/setup-home-server.mjs', 'scripts/deploy.sh', 'scripts/ssh-deploy.sh', 'scripts/ssh-content.sh', 'scripts/content-snapshot.mjs']) {
     copyFileSync(resolve(repository, filename), resolve(temporaryRepository, filename))
   }
   writeFileSync(resolve(temporaryRepository, '.env'), 'TURSO_DATABASE_URL=libsql://source.example\nTURSO_AUTH_TOKEN=source-token\nTUNNEL_TOKEN=tunnel-token\n')
@@ -83,7 +84,47 @@ test('server setup preserves secrets and can be rerun without the repository .en
   assert.equal(statSync(resolve(config, 'production-deploy.key')).mode & 0o777, 0o600)
   rmSync(resolve(temporaryRepository, '.env'))
   assert.equal(spawnSync(process.execPath, [setup], options).status, 0)
-  assert.equal(readFileSync(resolve(sshDirectory, 'authorized_keys'), 'utf8').trim().split('\n').length, 2)
+  assert.equal(readFileSync(resolve(sshDirectory, 'authorized_keys'), 'utf8').trim().split('\n').length, 4)
+  assert.equal(statSync(resolve(config, 'production-content.key')).mode & 0o777, 0o600)
+  assert.match(readFileSync(resolve(sshDirectory, 'authorized_keys'), 'utf8'), /restrict,command=.*ssh-content\.sh.*staging/)
+})
+test('content SSH key rejects arbitrary commands and invalid environments', () => {
+  for (const [environment, command] of [['production', 'content; whoami'], ['other', 'content']]) {
+    const result = spawnSync('/bin/bash', [resolve(repository, 'scripts/ssh-content.sh'), environment], {
+      encoding: 'utf8', env: { ...process.env, SSH_ORIGINAL_COMMAND: command },
+    })
+    assert.notEqual(result.status, 0)
+  }
+})
+test('content snapshot includes both responses and fails when the API fails', async context => {
+  let fail = false
+  const server = createServer((request, response) => {
+    if (fail && request.url === '/api/v1/work') {
+      response.writeHead(503).end()
+      return
+    }
+    response.writeHead(200, { 'Content-Type': 'application/json' })
+    response.end(JSON.stringify(request.url === '/api/v1/articles' ? [{ name: 'article' }] : [{ name: 'project' }]))
+  })
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
+  context.after(() => server.close())
+  const port = server.address().port
+  async function snapshot() {
+    const child = spawn(process.execPath, [resolve(repository, 'scripts/content-snapshot.mjs'), String(port)])
+    let stdout = '', stderr = ''
+    child.stdout.on('data', data => { stdout += data })
+    child.stderr.on('data', data => { stderr += data })
+    const status = await new Promise(resolve => child.on('close', resolve))
+    return { status, stdout, stderr }
+  }
+  const success = await snapshot()
+  assert.equal(success.status, 0, success.stderr)
+  assert.deepEqual(JSON.parse(success.stdout), { articles: [{ name: 'article' }], work: [{ name: 'project' }] })
+  fail = true
+  const error = await snapshot()
+  assert.notEqual(error.status, 0)
+  assert.equal(error.stdout, '')
+  assert.match(error.stderr, /503 for \/api\/v1\/work/)
 })
 function fakeDeployment(context, failHealth = false, environment = 'staging', incorrectRevision = false) {
   const { directory, config } = fixture(context)

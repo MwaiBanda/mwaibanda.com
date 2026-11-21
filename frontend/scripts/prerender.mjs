@@ -17,16 +17,27 @@ await build({
   build: { ssr: 'src/prerender.tsx', outDir: renderer, emptyOutDir: true, rollupOptions: { output: { entryFileNames: 'entry.mjs' } } },
 })
 const { parseArticlesResponse, parseWorkResponse, articlePath, siteOrigin, renderArticle, renderMetadata, renderHome, renderSitemap } = await import(pathToFileURL(resolve(renderer, 'entry.mjs')).href)
-const apiOrigin = new URL(process.env.CONTENT_API_URL || siteOrigin)
-if (!['http:', 'https:'].includes(apiOrigin.protocol)) throw new Error('CONTENT_API_URL must use HTTP or HTTPS')
-
-async function fetchContent(path) {
-  const response = await fetch(new URL(path, apiOrigin), { signal: AbortSignal.timeout(15000) })
-  if (!response.ok) throw new Error(`Content API returned ${response.status} for ${path}`)
-  return response.json()
+const snapshotPath = process.env.CONTENT_SNAPSHOT_PATH
+let rawArticles, rawWork, contentSource
+if (snapshotPath) {
+  const content = JSON.parse(await readFile(resolve(root, snapshotPath), 'utf8'))
+  if (!content || typeof content !== 'object' || Array.isArray(content)) throw new Error('Invalid content snapshot')
+  rawArticles = content.articles
+  rawWork = content.work
+  contentSource = 'content snapshot'
+} else {
+  const apiOrigin = new URL(process.env.CONTENT_API_URL || siteOrigin)
+  if (!['http:', 'https:'].includes(apiOrigin.protocol)) throw new Error('CONTENT_API_URL must use HTTP or HTTPS')
+  async function fetchContent(path) {
+    const response = await fetch(new URL(path, apiOrigin), { signal: AbortSignal.timeout(15000) })
+    if (!response.ok) throw new Error(`Content API returned ${response.status} for ${path}`)
+    return response.json()
+  }
+  const responses = await Promise.all([fetchContent('/api/v1/articles'), fetchContent('/api/v1/work')])
+  rawArticles = responses[0]
+  rawWork = responses[1]
+  contentSource = apiOrigin.origin
 }
-
-const [rawArticles, rawWork] = await Promise.all([fetchContent('/api/v1/articles'), fetchContent('/api/v1/work')])
 const articles = parseArticlesResponse(rawArticles)
 const work = parseWorkResponse(rawWork)
 const template = await readFile(resolve(output, 'index.html'), 'utf8')
@@ -99,4 +110,4 @@ await writeFile(resolve(output, '404.html'), documentFor('<main class="mx-auto m
 await writeFile(resolve(output, 'prerender-manifest.json'), JSON.stringify(manifest, null, 2))
 await writeFile(resolve(output, 'sitemap.xml'), renderSitemap([siteOrigin + '/', ...manifest.map(page => siteOrigin + page.path)]))
 await writeFile(resolve(output, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\nSitemap: ${siteOrigin}/sitemap.xml\n`)
-console.log(`Prerendered home and ${manifest.length} articles from ${apiOrigin.origin}`)
+console.log(`Prerendered home and ${manifest.length} articles from ${contentSource}`)

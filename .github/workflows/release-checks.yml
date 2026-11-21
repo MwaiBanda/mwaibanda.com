@@ -12,7 +12,45 @@ env:
   CONTENT_API_URL: ${{ github.ref == 'refs/heads/staging' && (vars.STAGING_CONTENT_API_URL || 'https://staging.mwaibanda.com') || (vars.PRODUCTION_CONTENT_API_URL || vars.CONTENT_API_URL || 'https://mwaibanda.com') }}
 
 jobs:
+  content-snapshot:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    env:
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST || 'mwais-macbook.tail27a672.ts.net' }}
+      DEPLOY_USER: ${{ vars.DEPLOY_USER || 'mwaibanda' }}
+    steps:
+      - uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: ${{ env.DEPLOY_HOST }}
+      - name: Fetch private content snapshot
+        env:
+          CONTENT_SSH_KEY: ${{ secrets.CONTENT_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$CONTENT_SSH_KEY"
+          test -n "$DEPLOY_KNOWN_HOSTS"
+          mkdir -p "$HOME/.ssh" content
+          chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$CONTENT_SSH_KEY" > "$HOME/.ssh/mwaibanda-content"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/mwaibanda-content" "$HOME/.ssh/known_hosts"
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=20 -i "$HOME/.ssh/mwaibanda-content" \
+            "$DEPLOY_USER@$DEPLOY_HOST" content > content/content.json
+          test -s content/content.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: content-snapshot
+          path: content/content.json
+          if-no-files-found: error
   frontend:
+    needs: content-snapshot
+    if: ${{ !cancelled() && (needs.content-snapshot.result == 'success' || needs.content-snapshot.result == 'skipped') }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,9 +68,27 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm audit --prod --audit-level high
+      - uses: actions/download-artifact@v4
+        if: needs.content-snapshot.result == 'success'
+        with:
+          name: content-snapshot
+          path: frontend/.release
+      - name: Use test content for non-release builds
+        if: needs.content-snapshot.result == 'skipped'
+        run: |
+          mkdir -p .release
+          cp scripts/test-content.json .release/content.json
       - run: pnpm release
+        env:
+          CONTENT_SNAPSHOT_PATH: .release/content.json
       - run: node --test scripts/deploy.test.mjs
         working-directory: .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-content
+          path: frontend/.release/content.json
+          include-hidden-files: true
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: public-site
@@ -49,6 +105,10 @@ jobs:
       environment: ${{ steps.image.outputs.environment }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-content
+          path: frontend/.release
       - name: Select immutable image and environment
         id: image
         run: |
@@ -68,6 +128,7 @@ jobs:
           tags: ${{ steps.image.outputs.image }}
           build-args: |
             CONTENT_API_URL=${{ env.CONTENT_API_URL }}
+            CONTENT_SNAPSHOT_PATH=.release/content.json
             RELEASE_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

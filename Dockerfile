@@ -9,7 +9,8 @@ RUN pnpm install --frozen-lockfile
 
 COPY frontend ./
 ARG CONTENT_API_URL=https://mwaibanda.com
-RUN CONTENT_API_URL="${CONTENT_API_URL}" pnpm run release
+ARG CONTENT_SNAPSHOT_PATH
+RUN CONTENT_API_URL="${CONTENT_API_URL}" CONTENT_SNAPSHOT_PATH="${CONTENT_SNAPSHOT_PATH}" pnpm run release
 
 # --- BACKEND BUILD STAGE ---
 FROM golang:1.26-trixie AS backend
