@@ -5,7 +5,10 @@ export default function ArticleMetadata({ article }: { article?: Article }) {
   const title = article ? `${article.name} | Mwai Banda` : 'Mwai Banda - Android | iOS | Roku | Web'
   const description = article?.summary ?? 'Mwai Banda, software engineer designing and building end-to-end experiences for Android, iOS, iPadOS, Roku & Web.'
   const url = siteOrigin + (article ? articlePath(article.name) : '/')
-  const image = article?.image ? new URL(article.image, siteOrigin).href : undefined
+  const image = article
+    ? article.image ? new URL(article.image, siteOrigin).href : undefined
+    : `${siteOrigin}/og-image.jpg`
+  const imageAlt = article ? article.name : 'Mwai Banda, software engineer'
 
   return <>
     <title>{title}</title>
@@ -15,10 +18,20 @@ export default function ArticleMetadata({ article }: { article?: Article }) {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={url} />
-    {image && <meta property="og:image" content={image} />}
+    {image && <>
+      <meta property="og:image" content={image} />
+      {!article && <>
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+      </>}
+      <meta property="og:image:alt" content={imageAlt} />
+    </>}
     <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    {image && <meta name="twitter:image" content={image} />}
+    {image && <>
+      <meta name="twitter:image" content={image} />
+      <meta name="twitter:image:alt" content={imageAlt} />
+    </>}
   </>
 }

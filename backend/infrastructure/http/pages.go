@@ -24,6 +24,8 @@ func RegisterPublicPages(server *echo.Echo, root string) error {
 	server.File("/portfolio", index)
 	server.File("/sitemap.xml", filepath.Join(root, "sitemap.xml"))
 	server.File("/robots.txt", filepath.Join(root, "robots.txt"))
+	server.File("/favicon.png", filepath.Join(root, "favicon.png"))
+	server.File("/og-image.jpg", filepath.Join(root, "og-image.jpg"))
 	data, err := os.ReadFile(filepath.Join(root, "prerender-manifest.json"))
 	if os.IsNotExist(err) {
 		server.File("/blog/:article", index)
@@ -42,6 +44,11 @@ func RegisterPublicPages(server *echo.Echo, root string) error {
 			return fmt.Errorf("invalid public-page manifest entry")
 		}
 		pages[entry.Name] = entry
+		slug, err := url.PathUnescape(strings.TrimPrefix(entry.Path, "/blog/"))
+		if err != nil || slug == "" {
+			return fmt.Errorf("invalid public-page manifest entry")
+		}
+		pages[strings.ToLower(slug)] = entry
 	}
 	notFound, err := os.ReadFile(filepath.Join(root, "404.html"))
 	if err != nil {

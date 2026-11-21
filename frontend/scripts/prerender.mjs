@@ -80,11 +80,15 @@ function documentFor(markup, metadata, articlePage = false) {
 
 const manifest = []
 const names = new Set()
+const paths = new Set()
 for (const article of articles) {
   const name = article.name.toLowerCase()
   if (names.has(name)) throw new Error(`Duplicate article URL: ${name}`)
   names.add(name)
   const path = articlePath(article.name)
+  if (path === '/blog/') throw new Error(`Article title has no URL-safe characters: ${article.name}`)
+  if (paths.has(path)) throw new Error(`Duplicate article URL: ${path}`)
+  paths.add(path)
   const file = `${path.slice(1)}/index.html`
   await mkdir(dirname(resolve(output, file)), { recursive: true })
   await writeFile(resolve(output, file), documentFor(renderArticle(article), renderMetadata(article), true))

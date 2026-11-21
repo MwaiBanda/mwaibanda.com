@@ -8,6 +8,7 @@ import './blog.css';
 import ArticleContent from './article-content';
 import ArticleMetadata from './article-metadata';
 import PageLoader from '../../components/page-loader';
+import { articleSlug } from '../../../router/article-url'
 
 export default function Blog() {
     const application = useApplication()
@@ -18,7 +19,7 @@ export default function Blog() {
             return application.articles.getAllArticles()
         },
     })
-    const currentArticle = articles.data?.find((item) => item.name.toLowerCase() === article?.toLowerCase())
+    const currentArticle = articles.data?.find((item) => articleSlug(item.name) === article?.toLowerCase())
 
     return <main className="blog-page">
       <nav className="blog-nav" aria-label="Article navigation">
