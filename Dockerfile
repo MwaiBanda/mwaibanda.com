@@ -38,7 +38,7 @@ RUN go vet ./... && go test ./... && go build -o app .
 FROM debian:trixie-slim AS runtime
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates libgcc-s1 libstdc++6 \
+    && apt-get install -y --no-install-recommends ca-certificates libgcc-s1 libstdc++6 zlib1g \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin app
