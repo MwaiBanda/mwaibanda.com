@@ -152,7 +152,7 @@ jobs:
         run: docker push "$IMAGE"
   deploy:
     needs: container
-    if: github.event_name == 'push' && needs.container.outputs.environment != 'none' && vars.HOME_SERVER_DEPLOY_ENABLED == 'true'
+    if: github.event_name == 'push' && ((needs.container.outputs.environment == 'staging' && vars.STAGING_DEPLOY_ENABLED == 'true') || (needs.container.outputs.environment == 'production' && vars.HOME_SERVER_DEPLOY_ENABLED == 'true'))
     runs-on: ubuntu-latest
     environment: ${{ needs.container.outputs.environment }}
     concurrency:
