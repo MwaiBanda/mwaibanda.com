@@ -10,7 +10,8 @@ import { parseEnv } from 'node:util'
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const commit = 'a'.repeat(40)
-const productionImage = `ghcr.io/mwaibanda/mwaibanda.com:main-${commit}`
+const productionImage = `ghcr.io/mwaibanda/mwaibanda.com@sha256:${'d'.repeat(64)}`
+const productionTag = `ghcr.io/mwaibanda/mwaibanda.com:main-${commit}`
 const stagingImage = `ghcr.io/mwaibanda/mwaibanda.com@sha256:${'b'.repeat(64)}`
 const previousStagingImage = `ghcr.io/mwaibanda/mwaibanda.com@sha256:${'c'.repeat(64)}`
 function fixture(context) {
@@ -24,17 +25,17 @@ function fixture(context) {
 }
 function runDeployment(config, environment, image, overrides = {}) {
   const args = [resolve(repository, 'scripts/deploy.sh'), '--check', environment, image]
-  if (environment === 'staging') args.push(commit)
+  args.push(commit)
   return spawnSync('/bin/bash', args, {
     encoding: 'utf8', env: { ...process.env, MWAIBANDA_CONFIG_DIR: config, ...overrides },
   })
 }
-test('production accepts its tag while staging requires an image digest', context => {
+test('production and staging accept digests while rejecting mutable tags', context => {
   const { config } = fixture(context)
   assert.equal(runDeployment(config, 'production', productionImage).status, 0)
   assert.equal(runDeployment(config, 'staging', stagingImage).status, 0)
-  assert.notEqual(runDeployment(config, 'production', stagingImage).status, 0)
-  assert.notEqual(runDeployment(config, 'staging', productionImage).status, 0)
+  assert.notEqual(runDeployment(config, 'production', productionTag).status, 0)
+  assert.notEqual(runDeployment(config, 'staging', productionTag).status, 0)
 })
 test('staging cannot use the production database', context => {
   const { config } = fixture(context)
@@ -65,12 +66,14 @@ test('a staging SSH key cannot deploy production', () => {
   assert.notEqual(result.status, 0)
   assert.match(result.stderr, /cannot deploy another environment/)
 })
-test('staging SSH deploy requires a commit SHA', () => {
-  const result = spawnSync('/bin/bash', [resolve(repository, 'scripts/ssh-deploy.sh'), 'staging'], {
-    encoding: 'utf8', env: { ...process.env, SSH_ORIGINAL_COMMAND: `deploy staging ${stagingImage}` },
-  })
-  assert.notEqual(result.status, 0)
-  assert.match(result.stderr, /require a commit SHA/)
+test('staging and production SSH deploys require a commit SHA', () => {
+  for (const [environment, image] of [['staging', stagingImage], ['production', productionImage]]) {
+    const result = spawnSync('/bin/bash', [resolve(repository, 'scripts/ssh-deploy.sh'), environment], {
+      encoding: 'utf8', env: { ...process.env, SSH_ORIGINAL_COMMAND: `deploy ${environment} ${image}` },
+    })
+    assert.notEqual(result.status, 0)
+    assert.match(result.stderr, /require a commit SHA/)
+  }
 })
 test('server setup preserves secrets and can be rerun without the repository .env', context => {
   const { directory, config } = fixture(context)
@@ -136,7 +139,7 @@ test('content snapshot includes both responses and fails when the API fails', as
   assert.equal(error.stdout, '')
   assert.match(error.stderr, /503 for \/api\/v1\/work/)
 })
-function fakeDeployment(context, failHealth = false, environment = 'staging', incorrectRevision = false) {
+function fakeDeployment(context, failHealth = false, environment = 'staging', incorrectRevision = false, failCosign = false) {
   const { directory, config } = fixture(context)
   const calls = resolve(directory, 'calls')
   const shell = resolve(directory, 'fake-tools.sh')
@@ -164,17 +167,16 @@ function fakeDeployment(context, failHealth = false, environment = 'staging', in
     if [[ "\${FAIL_COSIGN:-0}" == 1 ]]; then return 1; fi
   }
   `)
-  const args = [resolve(repository, 'scripts/deploy.sh'), environment, environment === 'staging' ? stagingImage : productionImage]
-  if (environment === 'staging') args.push(commit)
+  const args = [resolve(repository, 'scripts/deploy.sh'), environment, environment === 'staging' ? stagingImage : productionImage, commit]
   const result = spawnSync('/bin/bash', args, {
-    encoding: 'utf8', env: { ...process.env, PRODUCTION_IMAGE: '', STAGING_IMAGE: '', MWAIBANDA_CONFIG_DIR: config, BASH_ENV: shell, CALLS: calls, PREVIOUS_IMAGE: environment === 'staging' ? previousStagingImage : productionImage, CURRENT_SERVICE: environment === 'staging' ? 'mwaibanda-staging' : 'web', TARGET_SERVICE: environment === 'staging' ? 'mwaibanda-staging' : 'mwaibanda-prod', EXPECTED_SHA: incorrectRevision ? 'b'.repeat(40) : commit, FAIL_HEALTH: failHealth ? '1' : '0' },
+    encoding: 'utf8', env: { ...process.env, PRODUCTION_IMAGE: '', STAGING_IMAGE: '', MWAIBANDA_CONFIG_DIR: config, BASH_ENV: shell, CALLS: calls, PREVIOUS_IMAGE: environment === 'staging' ? previousStagingImage : productionImage, CURRENT_SERVICE: environment === 'staging' ? 'mwaibanda-staging' : 'web', TARGET_SERVICE: environment === 'staging' ? 'mwaibanda-staging' : 'mwaibanda-prod', EXPECTED_SHA: incorrectRevision ? 'b'.repeat(40) : commit, FAIL_HEALTH: failHealth ? '1' : '0', FAIL_COSIGN: failCosign ? '1' : '0' },
   })
   return { result, calls: readFileSync(calls, 'utf8'), config }
 }
 test('a staging deployment only starts staging and records its image', context => {
   const { result, calls, config } = fakeDeployment(context)
   assert.equal(result.status, 0, result.stderr)
-  assert.match(calls, /cosign verify .*ghcr\.io\/mwaibanda\/mwaibanda\.com@sha256:/)
+  assert.match(calls, /cosign verify .*refs\/heads\/staging .*ghcr\.io\/mwaibanda\/mwaibanda\.com@sha256:/)
   const updates = calls.split('\n').filter(line => line.includes(' up '))
   assert.equal(updates.length, 1)
   assert.match(updates[0], /--no-deps --no-build --pull never mwaibanda-staging/)
@@ -197,6 +199,18 @@ test('a failed staging signature verification stops before image pull or service
   assert.match(recorded, /cosign verify/)
   assert.doesNotMatch(recorded, /docker pull|compose .* up/)
 })
+test('production verifies the main-branch signature before image pull', context => {
+  const { result, calls } = fakeDeployment(context, false, 'production')
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(calls, /cosign verify .*refs\/heads\/main .*ghcr\.io\/mwaibanda\/mwaibanda\.com@sha256:/)
+  assert.ok(calls.indexOf('cosign verify') < calls.indexOf('pull ghcr.io'))
+})
+test('a failed production signature verification leaves production untouched', context => {
+  const { result, calls } = fakeDeployment(context, false, 'production', false, true)
+  assert.notEqual(result.status, 0)
+  assert.match(calls, /cosign verify .*refs\/heads\/main/)
+  assert.doesNotMatch(calls, /docker pull|rename mwaibanda-io|compose .* up/)
+})
 test('failed health checks restore the prior staging image without touching production', context => {
   const { result, calls, config } = fakeDeployment(context, true)
   assert.notEqual(result.status, 0)
@@ -216,7 +230,7 @@ test('a stale release header triggers rollback even when the API returns success
 test('the first production deployment migrates only the legacy production container', context => {
   const { result, calls } = fakeDeployment(context, false, 'production')
   assert.equal(result.status, 0, result.stderr)
-  assert.doesNotMatch(calls, /cosign verify/)
+  assert.match(calls, /cosign verify .*refs\/heads\/main/)
   assert.match(calls, /rename mwaibanda-io mwaibanda-io-legacy-/)
   assert.match(calls, /up -d --no-deps --no-build --pull never mwaibanda-prod/)
   assert.doesNotMatch(calls, /stop cloudflare-tunnel|up .*mwaibanda-staging/)

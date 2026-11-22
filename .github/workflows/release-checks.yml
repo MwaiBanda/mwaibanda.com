@@ -158,18 +158,16 @@ jobs:
             exit 1
           fi
           printf '%s\n' "$push_output"
-          if [[ "$ENVIRONMENT" == staging ]]; then
-            digest="$(printf '%s\n' "$push_output" | awk '$2 == "digest:" { digest=$3 } END { print digest }')"
-            if [[ ! "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
-              printf 'Could not capture the pushed image digest\n' >&2
-              exit 1
-            fi
-            echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          digest="$(printf '%s\n' "$push_output" | awk '$2 == "digest:" { digest=$3 } END { print digest }')"
+          if [[ ! "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            printf 'Could not capture the pushed image digest\n' >&2
+            exit 1
           fi
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
         shell: bash
-  sign_staging:
+  sign_release:
     needs: container
-    if: github.event_name == 'push' && needs.container.outputs.environment == 'staging'
+    if: github.event_name == 'push' && needs.container.outputs.environment != 'none'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -186,23 +184,28 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Sign staging image digest
+      - name: Sign release image digest
         id: signed
         env:
           IMAGE: ${{ needs.container.outputs.image }}
           DIGEST: ${{ needs.container.outputs.digest }}
+          ENVIRONMENT: ${{ needs.container.outputs.environment }}
         run: |
           if [[ ! "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
-            printf 'Missing or invalid staging image digest\n' >&2
+            printf 'Missing or invalid release image digest\n' >&2
             exit 1
           fi
+          case "$ENVIRONMENT" in
+            staging|production) ;;
+            *) printf 'Unsupported signing environment\n' >&2; exit 1 ;;
+          esac
           repository="${IMAGE%:*}"
           cosign sign --yes "$repository@$DIGEST"
           echo "image=$repository@$DIGEST" >> "$GITHUB_OUTPUT"
         shell: bash
   deploy:
-    needs: [container, sign_staging]
-    if: ${{ !cancelled() && github.event_name == 'push' && needs.container.result == 'success' && ((needs.container.outputs.environment == 'staging' && needs.sign_staging.result == 'success' && vars.STAGING_DEPLOY_ENABLED == 'true') || (needs.container.outputs.environment == 'production' && needs.sign_staging.result == 'skipped' && vars.HOME_SERVER_DEPLOY_ENABLED == 'true')) }}
+    needs: [container, sign_release]
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.container.result == 'success' && needs.sign_release.result == 'success' && ((needs.container.outputs.environment == 'staging' && vars.STAGING_DEPLOY_ENABLED == 'true') || (needs.container.outputs.environment == 'production' && vars.HOME_SERVER_DEPLOY_ENABLED == 'true')) }}
     runs-on: ubuntu-latest
     environment: ${{ needs.container.outputs.environment }}
     concurrency:
@@ -212,7 +215,7 @@ jobs:
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST || 'mwais-macbook.tail27a672.ts.net' }}
       DEPLOY_USER: ${{ vars.DEPLOY_USER || 'mwaibanda' }}
       DEPLOY_ENVIRONMENT: ${{ needs.container.outputs.environment }}
-      DEPLOY_IMAGE: ${{ needs.container.outputs.environment == 'staging' && needs.sign_staging.outputs.image || needs.container.outputs.image }}
+      DEPLOY_IMAGE: ${{ needs.sign_release.outputs.image }}
       DEPLOY_RELEASE_SHA: ${{ github.sha }}
     steps:
       - uses: tailscale/github-action@v4
@@ -235,10 +238,5 @@ jobs:
           chmod 600 "$HOME/.ssh/mwaibanda-deploy" "$HOME/.ssh/known_hosts"
           ssh_options=(-o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             -o ConnectTimeout=20 -i "$HOME/.ssh/mwaibanda-deploy")
-          if [[ "$DEPLOY_ENVIRONMENT" == staging ]]; then
-            ssh "${ssh_options[@]}" "$DEPLOY_USER@$DEPLOY_HOST" \
-              "deploy $DEPLOY_ENVIRONMENT $DEPLOY_IMAGE $DEPLOY_RELEASE_SHA"
-          else
-            ssh "${ssh_options[@]}" "$DEPLOY_USER@$DEPLOY_HOST" \
-              "deploy $DEPLOY_ENVIRONMENT $DEPLOY_IMAGE"
-          fi
+          ssh "${ssh_options[@]}" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "deploy $DEPLOY_ENVIRONMENT $DEPLOY_IMAGE $DEPLOY_RELEASE_SHA"

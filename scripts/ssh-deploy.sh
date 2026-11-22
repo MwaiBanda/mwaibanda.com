@@ -15,16 +15,11 @@ if [[ "$environment" != "$allowed_environment" ]]; then
     exit 2
 fi
 args=("$environment" "$image")
-if [[ "$environment" == staging ]]; then
-    if [[ ! "${release_sha:-}" =~ ^[0-9a-f]{40}$ ]]; then
-        printf 'Staging deploys require a commit SHA\n' >&2
-        exit 2
-    fi
-    args+=("$release_sha")
-elif [[ -n "${release_sha:-}" ]]; then
-    printf 'Production deploys do not accept an extra argument\n' >&2
+if [[ ! "${release_sha:-}" =~ ^[0-9a-f]{40}$ ]]; then
+    printf 'Deploys require a commit SHA\n' >&2
     exit 2
 fi
+args+=("$release_sha")
 unset MWAIBANDA_CONFIG_DIR
 directory=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 exec /bin/bash "$directory/deploy.sh" "${args[@]}"

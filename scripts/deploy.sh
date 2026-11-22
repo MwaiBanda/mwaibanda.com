@@ -6,7 +6,7 @@ export PATH="/opt/homebrew/opt/node@24/bin:/opt/homebrew/bin:/usr/local/bin:/usr
 check_only=0
 if [[ "${1:-}" == --check ]]; then check_only=1; shift; fi
 if [[ $# -lt 2 || $# -gt 3 ]]; then
-    printf 'Usage: deploy.sh [--check] production TAG | staging DIGEST COMMIT_SHA\n' >&2
+    printf 'Usage: deploy.sh [--check] production|staging DIGEST COMMIT_SHA\n' >&2
     exit 2
 fi
 environment=$1
@@ -14,15 +14,14 @@ image=$2
 release_sha=${3:-}
 case "$environment" in
     production)
-        service=mwaibanda-prod; container=mwaibanda-io; port=8080; image_variable=PRODUCTION_IMAGE
-        if [[ $# -ne 2 || ! "$image" =~ ^ghcr\.io/mwaibanda/mwaibanda\.com:main-[0-9a-f]{40}$ ]]; then
-            printf 'Expected an immutable production image tag\n' >&2
+        service=mwaibanda-prod; container=mwaibanda-io; port=8080; image_variable=PRODUCTION_IMAGE; signing_branch=main
+        if [[ $# -ne 3 || ! "$image" =~ ^ghcr\.io/mwaibanda/mwaibanda\.com@sha256:[a-f0-9]{64}$ || ! "$release_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            printf 'Expected a signed production image digest and commit SHA\n' >&2
             exit 2
         fi
-        release_sha=${image##*-}
         ;;
     staging)
-        service=mwaibanda-staging; container=mwaibanda-staging; port=8081; image_variable=STAGING_IMAGE
+        service=mwaibanda-staging; container=mwaibanda-staging; port=8081; image_variable=STAGING_IMAGE; signing_branch=staging
         if [[ $# -ne 3 || ! "$image" =~ ^ghcr\.io/mwaibanda/mwaibanda\.com@sha256:[a-f0-9]{64}$ || ! "$release_sha" =~ ^[0-9a-f]{40}$ ]]; then
             printf 'Expected a signed staging image digest and commit SHA\n' >&2
             exit 2
@@ -89,16 +88,14 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 docker info >/dev/null
 "${compose[@]}" config --quiet
-if [[ "$environment" == staging ]]; then
-    if ! command -v cosign >/dev/null 2>&1; then
-        printf 'Staging deployment requires cosign on the server; install it before deploying\n' >&2
-        exit 1
-    fi
-    cosign verify \
-        --certificate-identity 'https://github.com/MwaiBanda/mwaibanda.com/.github/workflows/release-checks.yml@refs/heads/staging' \
-        --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
-        "$image" >/dev/null
+if ! command -v cosign >/dev/null 2>&1; then
+    printf 'Deployment requires cosign on the server; install it before deploying\n' >&2
+    exit 1
 fi
+cosign verify \
+    --certificate-identity "https://github.com/MwaiBanda/mwaibanda.com/.github/workflows/release-checks.yml@refs/heads/$signing_branch" \
+    --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+    "$image" >/dev/null
 docker pull "$image"
 if [[ -n "$previous_image" ]]; then
     current_service=$(docker inspect --format '{{index .Config.Labels "com.docker.compose.service"}}' "$container")
