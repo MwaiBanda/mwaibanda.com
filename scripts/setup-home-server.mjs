@@ -77,3 +77,4 @@ console.log('Existing environment files were preserved. Configure staging.env wi
 console.log('No running container was changed. Re-run setup after changing deployment scripts or Compose configuration.')
 console.log('Environment-restricted SSH keys and a pinned host key are installed. Upload each private key only to its matching GitHub environment secret.')
 console.log('For private content builds, configure CONTENT_SSH_KEY in each environment with its matching content key.')
+console.log('Staging deployments require cosign on the server to verify the signed image digest.')
