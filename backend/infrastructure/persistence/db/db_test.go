@@ -1,7 +1,9 @@
 package db
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"path/filepath"
 	"testing"
 
@@ -20,7 +22,7 @@ func TestMigrateFreshDatabase(testCase *testing.T) {
 		}
 	})
 	for attempt := 0; attempt < 2; attempt++ {
-		if err := instance.Migrate(); err != nil {
+		if err := instance.Migrate(context.Background()); err != nil {
 			testCase.Fatal(err)
 		}
 		for _, table := range []string{"articles", "projects"} {
@@ -32,5 +34,21 @@ func TestMigrateFreshDatabase(testCase *testing.T) {
 				testCase.Fatalf("fresh table %s has %d rows", table, count)
 			}
 		}
+	}
+}
+
+func TestMigrateReturnsWhenContextIsCanceled(t *testing.T) {
+	database, err := sql.Open("libsql", "file:"+filepath.Join(t.TempDir(), "canceled-migration.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err = (&Instance{DB: sqlx.NewDb(database, "sqlite3")}).Migrate(ctx)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("Migrate error = %v, want context.Canceled", err)
 	}
 }
