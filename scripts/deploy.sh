@@ -5,21 +5,30 @@ export PATH="/opt/homebrew/opt/node@24/bin:/opt/homebrew/bin:/usr/local/bin:/usr
 
 check_only=0
 if [[ "${1:-}" == --check ]]; then check_only=1; shift; fi
-if [[ $# -ne 2 ]]; then
-    printf 'Usage: deploy.sh [--check] production|staging ghcr.io/mwaibanda/mwaibanda.com:branch-COMMIT_SHA\n' >&2
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+    printf 'Usage: deploy.sh [--check] production|staging DIGEST COMMIT_SHA\n' >&2
     exit 2
 fi
 environment=$1
 image=$2
+release_sha=${3:-}
 case "$environment" in
-    production) service=mwaibanda-prod; container=mwaibanda-io; branch=main; port=8080; image_variable=PRODUCTION_IMAGE ;;
-    staging) service=mwaibanda-staging; container=mwaibanda-staging; branch=staging; port=8081; image_variable=STAGING_IMAGE ;;
+    production)
+        service=mwaibanda-prod; container=mwaibanda-io; port=8080; image_variable=PRODUCTION_IMAGE; signing_branch=main
+        if [[ $# -ne 3 || ! "$image" =~ ^ghcr\.io/mwaibanda/mwaibanda\.com@sha256:[a-f0-9]{64}$ || ! "$release_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            printf 'Expected a signed production image digest and commit SHA\n' >&2
+            exit 2
+        fi
+        ;;
+    staging)
+        service=mwaibanda-staging; container=mwaibanda-staging; port=8081; image_variable=STAGING_IMAGE; signing_branch=staging
+        if [[ $# -ne 3 || ! "$image" =~ ^ghcr\.io/mwaibanda/mwaibanda\.com@sha256:[a-f0-9]{64}$ || ! "$release_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            printf 'Expected a signed staging image digest and commit SHA\n' >&2
+            exit 2
+        fi
+        ;;
     *) printf 'Unsupported environment\n' >&2; exit 2 ;;
 esac
-if [[ ! "$image" =~ ^ghcr\.io/mwaibanda/mwaibanda\.com:${branch}-[0-9a-f]{40}$ ]]; then
-    printf 'Expected an immutable image tag from the matching branch\n' >&2
-    exit 2
-fi
 script_directory=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 deployment_directory=$(cd "$script_directory/.." && pwd)
 config_directory=${MWAIBANDA_CONFIG_DIR:-"$HOME/.config/mwaibanda"}
@@ -50,7 +59,7 @@ mkdir -p "$config_directory/releases"
 lock="$config_directory/releases/$environment.lock"
 if ! mkdir "$lock" 2>/dev/null; then printf 'Another deployment is active; inspect %s\n' "$lock" >&2; exit 1; fi
 compose=(docker compose --profile staging --project-directory "$deployment_directory" -f "$deployment_directory/docker-compose.yaml")
-previous_image=$(docker inspect --format '{{.Image}}' "$container" 2>/dev/null || true)
+previous_image=$(docker inspect --format '{{.Config.Image}}' "$container" 2>/dev/null || true)
 legacy_container=''
 rollback_needed=0
 cleanup() {
@@ -79,6 +88,14 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 docker info >/dev/null
 "${compose[@]}" config --quiet
+if ! command -v cosign >/dev/null 2>&1; then
+    printf 'Deployment requires cosign on the server; install it before deploying\n' >&2
+    exit 1
+fi
+cosign verify \
+    --certificate-identity "https://github.com/MwaiBanda/mwaibanda.com/.github/workflows/release-checks.yml@refs/heads/$signing_branch" \
+    --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+    "$image" >/dev/null
 docker pull "$image"
 if [[ -n "$previous_image" ]]; then
     current_service=$(docker inspect --format '{{index .Config.Labels "com.docker.compose.service"}}' "$container")
@@ -98,7 +115,7 @@ export "$image_variable=$image"
 for endpoint in /api/v1/work /api/v1/articles; do
     curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-all-errors --retry-delay 1 --retry-max-time 45 --max-time 5 --dump-header "$lock/health.headers" --output /dev/null "http://127.0.0.1:$port$endpoint"
     actual_revision=$(awk 'tolower($1) == "x-release-sha:" { revision=$2 } END { gsub("\r", "", revision); print revision }' "$lock/health.headers")
-    if [[ "$actual_revision" != "${image##*-}" ]]; then printf 'Health endpoint does not match the expected release\n' >&2; exit 1; fi
+    if [[ "$actual_revision" != "$release_sha" ]]; then printf 'Health endpoint does not match the expected release\n' >&2; exit 1; fi
 done
 if [[ -n "$previous_image" ]]; then
     printf '%s\n' "$previous_image" > "$config_directory/releases/$environment.previous-image"
