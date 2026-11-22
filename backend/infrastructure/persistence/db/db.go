@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"embed"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -23,7 +24,10 @@ type Instance struct {
 	tempDir   string
 }
 
-func GetDatabaseInstance(cfg *config.Config) (*Instance, error) {
+func GetDatabaseInstance(ctx context.Context, cfg *config.Config) (*Instance, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	tempDir, err := os.MkdirTemp("", "libsql-*")
 	if err != nil {
 		return nil, err
@@ -36,21 +40,26 @@ func GetDatabaseInstance(cfg *config.Config) (*Instance, error) {
 		libsql.WithAuthToken(cfg.TursoDatabaseToken),
 	)
 	if err != nil {
-		_ = os.RemoveAll(tempDir)
-		return nil, err
+		return nil, errors.Join(err, removeTempDir(tempDir))
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, errors.Join(err, connector.Close(), removeTempDir(tempDir))
 	}
 	db := sqlx.NewDb(sql.OpenDB(connector), "sqlite3")
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
-	return &Instance{DB: db, connector: connector, tempDir: tempDir}, nil
+	instance := &Instance{DB: db, connector: connector, tempDir: tempDir}
+	return instance, nil
 }
 
-func (i *Instance) Migrate() error {
+func (i *Instance) Migrate(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if err := goose.SetDialect("sqlite3"); err != nil {
 		return err
 	}
 	goose.SetBaseFS(migrationFiles)
-	ctx := context.Background()
 	if _, err := i.DB.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS goose_db_version (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		version_id INTEGER NOT NULL,
@@ -59,7 +68,7 @@ func (i *Instance) Migrate() error {
 	)`); err != nil {
 		return err
 	}
-	if err := i.syncReplica(); err != nil {
+	if err := i.syncReplica(ctx); err != nil {
 		return err
 	}
 	if _, err := i.DB.ExecContext(ctx, `INSERT INTO goose_db_version (version_id, is_applied)
@@ -67,21 +76,36 @@ func (i *Instance) Migrate() error {
 		WHERE NOT EXISTS (SELECT 1 FROM goose_db_version)`); err != nil {
 		return err
 	}
-	if err := i.syncReplica(); err != nil {
+	if err := i.syncReplica(ctx); err != nil {
 		return err
 	}
-	if err := goose.Up(i.DB.DB, "migrations"); err != nil {
+	if err := goose.UpContext(ctx, i.DB.DB, "migrations"); err != nil {
 		return err
 	}
-	return i.syncReplica()
+	return i.syncReplica(ctx)
 }
 
-func (i *Instance) syncReplica() error {
+func (i *Instance) syncReplica(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if i.connector == nil {
 		return nil
 	}
 	_, err := i.connector.Sync()
+	if err == nil {
+		err = ctx.Err()
+	} else if ctxErr := ctx.Err(); ctxErr != nil {
+		err = errors.Join(err, ctxErr)
+	}
 	return err
+}
+
+func removeTempDir(tempDir string) error {
+	if err := os.RemoveAll(tempDir); err != nil {
+		return fmt.Errorf("remove temporary database directory: %w", err)
+	}
+	return nil
 }
 
 func (i *Instance) Close() error {
@@ -99,7 +123,7 @@ func (i *Instance) Close() error {
 			closeErrors = append(closeErrors, err)
 		}
 	}
-	if err := os.RemoveAll(i.tempDir); err != nil {
+	if err := removeTempDir(i.tempDir); err != nil {
 		closeErrors = append(closeErrors, err)
 	}
 	return errors.Join(closeErrors...)
